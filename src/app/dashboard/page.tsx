@@ -5,13 +5,7 @@ import { useGetV1Me } from "@/api/generated/user/user";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Coins } from "lucide-react";
 import BFHBlackjack from "@/components/game/blackjack";
-import dynamic from "next/dynamic";
 
-// SSR無効でインポート（Hydrationエラー完全回避）
-const MobileShareButton = dynamic(
-    () => import('@/components/ui/mobile-share-button'),
-    { ssr: false, loading: () => null }
-);
 const LANDS: Record<number, string> = {
     1: 'Sain', 2: 'La Veda', 3: 'Zeltban',
     4: 'Sama', 5: 'Vriksha', 6: 'Mount Nihilo', 7: 'Agni',
@@ -120,8 +114,7 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* スマホ共有ボタン（SSR無効コンポーネント → Hydrationエラー回避） */}
-                        <MobileShareButton />
+
 
                     </header>
 
