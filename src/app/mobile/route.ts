@@ -6,21 +6,32 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
     const token = request.nextUrl.searchParams.get('t');
+    const refreshToken = request.nextUrl.searchParams.get('r');
 
     if (!token || token.length < 10) {
-        // トークンなし → ログインページへ
         return NextResponse.redirect(new URL('/', request.url));
     }
 
-    // Cookie をセットして dashboard へリダイレクト
     const response = NextResponse.redirect(new URL('/dashboard', request.url));
+
     response.cookies.set('bfh_access_token', token, {
-        httpOnly: false,      // JS から読めるように（プロキシが Cookie を読む）
-        secure: false,        // HTTP（ローカル LAN）でも動作するよう false
+        httpOnly: false,
+        secure: false,
         sameSite: 'lax',
         path: '/',
-        maxAge: 3600,         // 1時間
+        maxAge: 3600,
     });
+
+    // refresh_token もあれば一緒にセット（30日有効）
+    if (refreshToken) {
+        response.cookies.set('bfh_refresh_token', refreshToken, {
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30,
+        });
+    }
 
     return response;
 }

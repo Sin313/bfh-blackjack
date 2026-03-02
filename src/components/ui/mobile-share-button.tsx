@@ -23,11 +23,22 @@ export default function MobileShareButton() {
 
             if (!token) throw new Error('token not found');
 
+            // refresh_token も取得（あれば）
+            const refreshToken = document.cookie
+                .split(';')
+                .map(c => c.trim())
+                .find(c => c.startsWith('bfh_refresh_token='))
+                ?.split('=')
+                .slice(1)
+                .join('=');
+
             // LAN IPを取得
             const ipRes = await fetch('/api/local-ip');
             const { ip } = await ipRes.json();
             const port = window.location.port || '3000';
-            const url = `http://${ip}:${port}/mobile?t=${encodeURIComponent(token)}`;
+            const params = new URLSearchParams({ t: token });
+            if (refreshToken) params.set('r', refreshToken);
+            const url = `http://${ip}:${port}/mobile?${params.toString()}`;
 
             // クリップボードへコピー（失敗時はpromptで代替）
             try {

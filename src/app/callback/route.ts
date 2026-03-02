@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
             }
         );
 
-        const { access_token, expires_in } = response.data;
+        const { access_token, refresh_token, expires_in } = response.data;
 
         const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
 
@@ -50,6 +50,17 @@ export async function GET(request: NextRequest) {
             path: '/',
             maxAge: expires_in || 3600,
         });
+
+        // refresh_token も保存（offline_access スコープで取得した場合）
+        if (refresh_token) {
+            redirectResponse.cookies.set('bfh_refresh_token', refresh_token, {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 60 * 60 * 24 * 30, // 30日
+            });
+        }
 
         return redirectResponse;
     } catch (error: any) {
