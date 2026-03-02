@@ -1,0 +1,1718 @@
+{
+    "openapi": "3.0.0",
+    "x-origin": [
+        {
+            "url": "https://api.bravefrontierheroes.com/swagger/doc.json",
+            "format": "swagger",
+            "version": "2.0",
+            "converter": {
+                "url": "https://github.com/mermade/oas-kit",
+                "version": "7.0.8"
+            }
+        }
+    ],
+    "info": {
+        "description": "Backend API for BFH",
+        "title": "BFH Auth Example API",
+        "termsOfService": "http://bravefrontierheroes.com",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "version": "1.0"
+    },
+    "paths": {
+        "/v1/deck/templates": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of user's deck templates from BFH game server",
+                "tags": [
+                    "Deck"
+                ],
+                "summary": "Get my deck templates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.DeckTemplatesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/hero/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns hero details from BFH game server",
+                "tags": [
+                    "Hero"
+                ],
+                "summary": "Get hero by ID",
+                "parameters": [
+                    {
+                        "description": "Hero ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.HeroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/heroes": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of heroes from BFH game server. If hero_ids is empty or omitted, returns all heroes",
+                "tags": [
+                    "Hero"
+                ],
+                "summary": "Get heroes by IDs",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/handlers.HeroIdsRequest"
+                            }
+                        }
+                    },
+                    "description": "Hero IDs to retrieve (optional, empty means all)"
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.HeroesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns current user details from BFH game server including UID, name, wallet address, land status, guild information, and game statistics",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get current user information",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved user information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.MeResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - MCH Auth token not found or expired",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - Failed to retrieve user data from game server",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me/spheres": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns the authenticated user's spheres from AMS (Asset Management Service)",
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Get user's spheres",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.SpheresResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me/units": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns the authenticated user's units from AMS (Asset Management Service)",
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Get user's units",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.UnitsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/playermatches": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of passwords for ongoing public player matches from BFH game server",
+                "tags": [
+                    "PlayerMatch"
+                ],
+                "summary": "Get ongoing player matches",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.PlayerMatchListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/rankmatches": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of current rank match IDs from BFH game server",
+                "tags": [
+                    "RankMatch"
+                ],
+                "summary": "Get current rank matches",
+                "parameters": [
+                    {
+                        "description": "Match status (ongoing, finished)",
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "ongoing"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer",
+                                        "format": "int32"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/rankmatches/{id}/history": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns battle history for a specific rank match for the authenticated user only",
+                "tags": [
+                    "RankMatch"
+                ],
+                "summary": "Get rank match history",
+                "parameters": [
+                    {
+                        "description": "RankMatch ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.RankMatchHistoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/rankmatches/{id}/me": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns authenticated user's rank match participation status, ranking, and stats",
+                "tags": [
+                    "RankMatch"
+                ],
+                "summary": "Get my rank match user info",
+                "parameters": [
+                    {
+                        "description": "RankMatch ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.RankMatchMyUserInfoResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/rankmatches/{id}/participants": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns paginated list of participants for a specific rank match",
+                "tags": [
+                    "RankMatch"
+                ],
+                "summary": "Get rank match participants",
+                "parameters": [
+                    {
+                        "description": "RankMatch ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "description": "Pagination limit (max 1000)",
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.RankMatchParticipantsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/sphere/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns sphere details from BFH game server (internally uses extension)",
+                "tags": [
+                    "Sphere"
+                ],
+                "summary": "Get sphere by ID",
+                "parameters": [
+                    {
+                        "description": "Sphere ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.SphereDataResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/spheres": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of spheres from BFH game server (internally uses extensions). If sphere_ids is empty or omitted, returns all spheres",
+                "tags": [
+                    "Sphere"
+                ],
+                "summary": "Get spheres by IDs",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/handlers.SphereIdsRequest"
+                            }
+                        }
+                    },
+                    "description": "Sphere IDs to retrieve (optional, empty means all)"
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.SphereDatasResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/trade/hero": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of current hero trades from BFH game server with filtering and sorting options",
+                "tags": [
+                    "Trade"
+                ],
+                "summary": "Get current hero trades",
+                "parameters": [
+                    {
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "description": "Pagination limit (max 1000)",
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 100
+                        }
+                    },
+                    {
+                        "description": "Rarity filter (comma-separated integers, e.g., '1,2,3')",
+                        "name": "rarity_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Status filter (comma-separated: 0=EXHIBITION, 1=TRADE, 2=DONE, 3=CANCELLED, 4=EXPIRED, 5=TRANSACTION)",
+                        "name": "status_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Param filter (comma-separated: 0=HP, 1=PHY, 2=INT, 3=AGI, 4=VIT, 5=MND)",
+                        "name": "param_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by user ID",
+                        "name": "uid",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Filter by asset ID (hero ID)",
+                        "name": "asset_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Filter by asset type",
+                        "name": "asset_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Sort type (0=NEW, 1=GUM_LOW, 2=GUM_HIGH, 3=CE_LOW, 4=CE_HIGH, 5=RARITY, 6=LV, 7=HP, 8=ATK, 9=MAG, 10=DEF, 11=MDEF, 12=AGI)",
+                        "name": "sort_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "description": "Sort order (0=ASC, 1=DESC)",
+                        "name": "sort_order",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "description": "Attribute filter (comma-separated integers)",
+                        "name": "attribute_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.HeroTradeResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/trade/sphere": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns list of current sphere trades from BFH game server with filtering and sorting options",
+                "tags": [
+                    "Trade"
+                ],
+                "summary": "Get current sphere trades",
+                "parameters": [
+                    {
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "description": "Pagination limit (max 1000)",
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 100
+                        }
+                    },
+                    {
+                        "description": "Rarity filter (comma-separated integers, e.g., '1,2,3')",
+                        "name": "rarity_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Status filter (comma-separated: 0=EXHIBITION, 1=TRADE, 2=DONE, 3=CANCELLED, 4=EXPIRED, 5=TRANSACTION)",
+                        "name": "status_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Param filter (comma-separated: 0=HP, 1=PHY, 2=INT, 3=AGI, 4=VIT, 5=MND)",
+                        "name": "param_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by user ID",
+                        "name": "uid",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Filter by asset ID (sphere ID)",
+                        "name": "asset_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Filter by asset type",
+                        "name": "asset_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Sort type (0=NEW, 1=GUM_LOW, 2=GUM_HIGH, 3=CE_LOW, 4=CE_HIGH, 5=RARITY, 6=LV, 7=HP, 8=ATK, 9=MAG, 10=DEF, 11=MDEF, 12=AGI)",
+                        "name": "sort_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "description": "Sort order (0=ASC, 1=DESC)",
+                        "name": "sort_order",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "description": "Attribute filter (comma-separated integers)",
+                        "name": "attribute_filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.SphereTradeResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/user/by-address/{address}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns user details from BFH game server by ETH address",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get user by ETH address",
+                "parameters": [
+                    {
+                        "description": "ETH Address (e.g., 0x4d8bf583bd2dd813b5e7ddef05f268ec33f46458)",
+                        "name": "address",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/user/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2AccessCode": [
+                            "openid profile"
+                        ]
+                    }
+                ],
+                "description": "Returns user details from BFH game server by user ID",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handlers.UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/middleware.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "OAuth2AccessCode": {
+                "type": "oauth2",
+                "flows": {
+                    "authorizationCode": {
+                        "authorizationUrl": "https://auth.bravefrontierheroes.com/oauth2/auth",
+                        "tokenUrl": "https://auth.bravefrontierheroes.com/oauth2/token",
+                        "scopes": {
+                            "email": "Email address",
+                            "offline_access": "Refresh token access",
+                            "openid": "OpenID Connect scope",
+                            "profile": "Profile information"
+                        }
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "handlers.DeckTemplatesResponse": {
+                "type": "object",
+                "properties": {
+                    "deck_templates": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "quest_deck_templates": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "handlers.HeroIdsRequest": {
+                "type": "object",
+                "properties": {
+                    "hero_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            200000143,
+                            200000144
+                        ]
+                    }
+                }
+            },
+            "handlers.HeroResponse": {
+                "type": "object",
+                "properties": {
+                    "hero": {
+                        "type": "object"
+                    }
+                }
+            },
+            "handlers.HeroTradeResponse": {
+                "type": "object",
+                "properties": {
+                    "hero_trades": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "limit": {
+                        "type": "integer"
+                    },
+                    "offset": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "handlers.HeroesResponse": {
+                "type": "object",
+                "properties": {
+                    "heroes": {
+                        "type": "object"
+                    }
+                }
+            },
+            "handlers.MeResponse": {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "type": "object"
+                    }
+                }
+            },
+            "handlers.PlayerMatchListResponse": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer"
+                    },
+                    "offset": {
+                        "type": "integer"
+                    },
+                    "passwords": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "handlers.RankMatchDeckUnit": {
+                "type": "object",
+                "properties": {
+                    "accessory_id": {
+                        "type": "integer"
+                    },
+                    "active": {
+                        "type": "integer"
+                    },
+                    "extension_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "hero_id": {
+                        "type": "integer"
+                    },
+                    "position": {
+                        "type": "integer"
+                    },
+                    "skill_orders": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "handlers.RankMatchHistoryOpponent": {
+                "type": "object",
+                "properties": {
+                    "at": {
+                        "type": "string"
+                    },
+                    "uids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "handlers.RankMatchHistoryResponse": {
+                "type": "object",
+                "properties": {
+                    "lose": {
+                        "type": "integer"
+                    },
+                    "opponent": {
+                        "$ref": "#/components/schemas/handlers.RankMatchHistoryOpponent"
+                    },
+                    "rate": {
+                        "type": "integer"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/handlers.RankMatchHistoryResult"
+                        }
+                    },
+                    "uid": {
+                        "type": "integer"
+                    },
+                    "win": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "handlers.RankMatchHistoryResult": {
+                "type": "object",
+                "properties": {
+                    "added_damage": {
+                        "type": "integer"
+                    },
+                    "at": {
+                        "type": "string"
+                    },
+                    "attacker": {
+                        "type": "integer"
+                    },
+                    "battle_id": {
+                        "type": "integer"
+                    },
+                    "defender": {
+                        "type": "integer"
+                    },
+                    "last_rate": {
+                        "type": "integer"
+                    },
+                    "new_rate": {
+                        "type": "integer"
+                    },
+                    "taken_damage": {
+                        "type": "integer"
+                    },
+                    "win": {
+                        "type": "boolean"
+                    },
+                    "win_uft": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "handlers.RankMatchMyUserInfoResponse": {
+                "type": "object",
+                "properties": {
+                    "added_damage": {
+                        "type": "integer"
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "isJoined": {
+                        "type": "boolean"
+                    },
+                    "joined_rank_match_id": {
+                        "type": "integer"
+                    },
+                    "matches_left_for_reward": {
+                        "type": "integer"
+                    },
+                    "opponent_name": {
+                        "type": "string"
+                    },
+                    "opponent_rate": {
+                        "type": "integer"
+                    },
+                    "opponent_uid": {
+                        "type": "integer"
+                    },
+                    "opponent_units": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/handlers.RankMatchDeckUnit"
+                        }
+                    },
+                    "opponent_until": {
+                        "type": "string"
+                    },
+                    "placement": {
+                        "type": "integer"
+                    },
+                    "ranking": {
+                        "type": "integer"
+                    },
+                    "rate": {
+                        "type": "integer"
+                    },
+                    "send_reward": {
+                        "type": "integer"
+                    },
+                    "taken_damage": {
+                        "type": "integer"
+                    },
+                    "tier": {
+                        "type": "integer"
+                    },
+                    "uid": {
+                        "type": "integer"
+                    },
+                    "win_percentage": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "handlers.RankMatchParticipantsResponse": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer"
+                    },
+                    "offset": {
+                        "type": "integer"
+                    },
+                    "participants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/handlers.RankMatchUserInfo"
+                        }
+                    },
+                    "rank_match_id": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "handlers.RankMatchUserInfo": {
+                "type": "object",
+                "properties": {
+                    "added_damage": {
+                        "type": "integer"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_joined": {
+                        "type": "boolean"
+                    },
+                    "joined_rank_match_id": {
+                        "type": "integer"
+                    },
+                    "matches_left_for_reward": {
+                        "type": "integer"
+                    },
+                    "placement": {
+                        "type": "integer"
+                    },
+                    "ranking": {
+                        "type": "integer"
+                    },
+                    "rate": {
+                        "type": "integer"
+                    },
+                    "send_reward": {
+                        "type": "integer"
+                    },
+                    "taken_damage": {
+                        "type": "integer"
+                    },
+                    "tier": {
+                        "type": "integer"
+                    },
+                    "uid": {
+                        "type": "integer"
+                    },
+                    "win_percentage": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "handlers.SphereDataResponse": {
+                "type": "object",
+                "properties": {
+                    "sphere": {
+                        "type": "object"
+                    }
+                }
+            },
+            "handlers.SphereDatasResponse": {
+                "type": "object",
+                "properties": {
+                    "spheres": {
+                        "type": "object"
+                    }
+                }
+            },
+            "handlers.SphereIdsRequest": {
+                "type": "object",
+                "properties": {
+                    "sphere_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            300000001,
+                            300000002
+                        ]
+                    }
+                }
+            },
+            "handlers.SphereTradeResponse": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer"
+                    },
+                    "offset": {
+                        "type": "integer"
+                    },
+                    "sphere_trades": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "handlers.SpheresResponse": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "spheres": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "wallet_address": {
+                        "type": "string"
+                    }
+                }
+            },
+            "handlers.UnitsResponse": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "units": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "wallet_address": {
+                        "type": "string"
+                    }
+                }
+            },
+            "handlers.UserResponse": {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "type": "object"
+                    }
+                }
+            },
+            "middleware.ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
