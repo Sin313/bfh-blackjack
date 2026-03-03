@@ -270,6 +270,14 @@ function Hand({ cards, label, total, animate, hideTotal, totalBelow }: {
 type GamePhase = "loading" | "error" | "idle" | "playing" | "dealer" | "result";
 type Result = "win" | "lose" | "push" | "blackjack";
 
+const STREAK_BADGES = [
+    { streak: 2, icon: "🗡️", label: "剣士" },
+    { streak: 3, icon: "🛡️", label: "戦士" },
+    { streak: 5, icon: "⚔️", label: "勇者" },
+    { streak: 10, icon: "🔥", label: "英雄" },
+    { streak: 20, icon: "👑", label: "伝説" },
+] as const;
+
 export default function BFHBlackjack() {
     // ── ユニット不足チェック: 1体以上あればプレイ可能 ──
     const [unitPool, setUnitPool] = useState<DisplayUnit[]>([]);
@@ -286,27 +294,32 @@ export default function BFHBlackjack() {
     const [score, setScore] = useState({ win: 0, lose: 0, push: 0 });
     const [winStreak, setWinStreak] = useState(0);
     const [bestStreak, setBestStreak] = useState(0);
-    const [muted, setMuted] = useState(false);     // ミュート
-    const [showRules, setShowRules] = useState(false); // ルール表示
+    const [muted, setMuted] = useState(false);
+    const [showRules, setShowRules] = useState(false);
+    const [earnedBadges, setEarnedBadges] = useState<number[]>([]);
+    const [newBadgeAlert, setNewBadgeAlert] = useState<typeof STREAK_BADGES[number] | null>(null);
 
-    // ──  バグ修正: deck/idx/dealing を useRef で管理し二重ドローを防ぐ ──
+    // ──  バグ修正: deck/idx/dealing を useRef で管理 ──
     const deckRef = useRef<GameCard[]>([]);
     const idxRef = useRef<number>(0);
-    const dealing = useRef<boolean>(false);   // ← useState ではなく ref
+    const dealing = useRef<boolean>(false);
     const phaseRef = useRef<GamePhase>("loading");
-    const [, forceRender] = useState(0); // レンダリング用トリガー
+    const mutedRef = useRef(false); // MUTEの確実な参照
+    const [, forceRender] = useState(0);
 
     const setPhaseSync = (p: GamePhase) => { phaseRef.current = p; setPhase(p); };
 
-    // ── localStorage からベスト連勝を読み込む ──
+    // ── localStorage からベスト連勝・バッジを読み込む ──
     useEffect(() => {
         const saved = parseInt(localStorage.getItem('bfh_best_streak') || '0', 10);
         if (!isNaN(saved)) setBestStreak(saved);
+        const badges = JSON.parse(localStorage.getItem('bfh_badges') || '[]') as number[];
+        setEarnedBadges(badges);
     }, []);
 
-    // ── 効果音 (Web Audio API) ──
+    // ── 効果音 (Web Audio API) ── mutedRef で確実にミュート判定 ──
     const playSound = useCallback((type: 'deal' | 'win' | 'lose' | 'push') => {
-        if (muted) return; // ミュート中はスキップ
+        if (mutedRef.current) return;
         try {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
             if (!AudioCtx) return;
@@ -334,22 +347,17 @@ export default function BFHBlackjack() {
                     osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.4);
                 });
             } else if (type === 'lose') {
-                // 敗北音: 短調和音が下降する重厚なサウンド
-                const chords = [
-                    [0, [392, 466, 494]],  // G-Bb-B短調
-                    [0.25, [349, 440, 466]],  // F-A-Bb下降
-                    [0.5, [294, 370, 392]],  // D-F#-G
-                    [0.75, [261, 311, 349]],  // C-Eb-F 終決
-                ] as [number, number[]][];
-                chords.forEach(([t, freqs]) => {
-                    freqs.forEach((freq) => {
+                // 敗北音: 2コードのみ・短く（0.35秒）
+                const loseChords: [number, number[]][] = [[0, [330, 392]], [0.18, [261, 311]]];
+                loseChords.forEach(([t, freqs]) => {
+                    freqs.forEach(freq => {
                         const osc = ctx.createOscillator();
                         const g = ctx.createGain();
-                        osc.frequency.value = freq; osc.type = 'sine';
-                        g.gain.setValueAtTime(0.12, ctx.currentTime + t);
-                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.45);
+                        osc.frequency.value = freq; osc.type = 'triangle';
+                        g.gain.setValueAtTime(0.2, ctx.currentTime + t);
+                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3);
                         osc.connect(g); g.connect(master);
-                        osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.5);
+                        osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.32);
                     });
                 });
             } else {
@@ -362,7 +370,7 @@ export default function BFHBlackjack() {
                 osc.start(); osc.stop(ctx.currentTime + 0.32);
             }
         } catch { }
-    }, [muted]);
+    }, []); // mutedRef.current を参照するので依存なし
 
     function drawCard(pool: DisplayUnit[]): GameCard {
         if (idxRef.current >= deckRef.current.length) {
@@ -535,10 +543,11 @@ export default function BFHBlackjack() {
         }));
         // 効果音
         playSound(r === "win" || r === "blackjack" ? 'win' : r === "lose" ? 'lose' : 'push');
-        // 連勝カウント + ベスト更新
+        // 連勝カウント + ベスト更新 + バッジチェック
         if (r === "win" || r === "blackjack") {
             setWinStreak((prev) => {
                 const next = prev + 1;
+                // ベスト更新
                 setBestStreak((best) => {
                     if (next > best) {
                         localStorage.setItem('bfh_best_streak', String(next));
@@ -546,6 +555,18 @@ export default function BFHBlackjack() {
                     }
                     return best;
                 });
+                // バッジチェック
+                const badge = STREAK_BADGES.find(b => b.streak === next);
+                if (badge) {
+                    setEarnedBadges(eb => {
+                        if (eb.includes(badge.streak)) return eb;
+                        const updated = [...eb, badge.streak];
+                        localStorage.setItem('bfh_badges', JSON.stringify(updated));
+                        return updated;
+                    });
+                    setNewBadgeAlert(badge);
+                    setTimeout(() => setNewBadgeAlert(null), 3500);
+                }
                 return next;
             });
         } else {
@@ -820,7 +841,7 @@ export default function BFHBlackjack() {
                                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}
                                 >?</button>
                                 <button
-                                    onClick={() => setMuted(m => !m)}
+                                    onClick={() => { mutedRef.current = !muted; setMuted(m => !m); }}
                                     title={muted ? "音オン" : "ミュート"}
                                     style={{
                                         background: muted ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.05)",
@@ -833,6 +854,17 @@ export default function BFHBlackjack() {
                                     }}
                                 >{muted ? "🔇" : "🔊"}</button>
                             </div>
+                            {/* 獲得バッジ表示 */}
+                            {earnedBadges.length > 0 && (
+                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                                    {STREAK_BADGES.filter(b => earnedBadges.includes(b.streak)).map(b => (
+                                        <span key={b.streak} title={`${b.streak}連勝達成: ${b.label}`} style={{
+                                            fontSize: 14, cursor: "default",
+                                            filter: "drop-shadow(0 0 4px rgba(255,215,0,0.5))",
+                                        }}>{b.icon}</span>
+                                    ))}
+                                </div>
+                            )}
                             {/* リセットボタン */}
                             <button
                                 onClick={() => { setScore({ win: 0, lose: 0, push: 0 }); setWinStreak(0); }}
@@ -866,6 +898,28 @@ export default function BFHBlackjack() {
                     </div>
                     <div style={{ height: 1, background: "linear-gradient(90deg,transparent,rgba(255,140,0,0.4),rgba(255,60,0,0.3),transparent)", marginTop: 14 }} />
                 </div>
+
+                {/* ── バッジ獲得トースト ── */}
+                {newBadgeAlert && (
+                    <div style={{
+                        position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+                        background: "linear-gradient(135deg,rgba(30,15,0,0.97),rgba(20,10,30,0.97))",
+                        border: "1px solid rgba(255,215,0,0.5)",
+                        borderRadius: 14, padding: "14px 28px",
+                        display: "flex", alignItems: "center", gap: 12,
+                        zIndex: 200, boxShadow: "0 0 40px rgba(255,215,0,0.3)",
+                        animation: "bjResultPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
+                        whiteSpace: "nowrap",
+                    }}>
+                        <span style={{ fontSize: 28 }}>{newBadgeAlert.icon}</span>
+                        <div>
+                            <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,215,0,0.6)", letterSpacing: 2, marginBottom: 2 }}>称号獲得！</div>
+                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 14, fontWeight: 700, color: "#ffd700" }}>
+                                {newBadgeAlert.streak}連勝 — {newBadgeAlert.label}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── LOADING ── */}
                 {phase === "loading" && (
