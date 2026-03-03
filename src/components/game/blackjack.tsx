@@ -596,8 +596,9 @@ export default function BFHBlackjack() {
                 minHeight: "100svh",
                 background: "radial-gradient(ellipse at 50% 20%, #1a0900 0%, #080810 60%, #030306 100%)",
                 display: "flex", flexDirection: "column", alignItems: "center",
-                justifyContent: "flex-start", padding: "20px 16px 40px",
+                justifyContent: "center", padding: "20px 16px 40px",
                 fontFamily: "'Noto Sans JP',sans-serif", userSelect: "none",
+                overflowY: "auto",
             }}>
 
                 {/* ── HEADER ── */}
