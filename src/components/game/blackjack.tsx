@@ -149,11 +149,12 @@ function Card({ card, index, animate }: { card: GameCard; index: number; animate
                     <img
                         src={card.unit.image}
                         alt={card.unit.jaName}
+                        decoding="async"
                         onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
                         style={{
                             position: "absolute", top: 0, left: 0,
                             width: "100%", height: "100%",
-                            objectFit: "cover",
+                            objectFit: "contain",
                             objectPosition: "center center",
                             display: "block", pointerEvents: "none",
                         }}
@@ -689,19 +690,21 @@ export default function BFHBlackjack() {
           font-size: clamp(7px, 2.2vw, 8px);
           font-weight:700;
           color:rgba(255,255,255,0.95);
-          line-height:1.4;
+          line-height:1.3;
           text-shadow:0 1px 4px rgba(0,0,0,1);
           font-family:'Noto Sans JP',sans-serif;
-          overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+          overflow:hidden;
+          display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
         }
         .bj-card-bb {
           font-size: clamp(6px, 1.9vw, 7px);
           color:rgba(255,210,100,0.92);
-          line-height:1.4;
+          line-height:1.3;
           text-shadow:0 1px 3px rgba(0,0,0,1);
           font-family:'Noto Sans JP',sans-serif;
           margin-top:1px;
-          overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+          overflow:hidden;
+          display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
         }
         /* スマホ用追加スタイル (小画面縦画対応) */
         @media (max-width: 480px) {
@@ -724,14 +727,14 @@ export default function BFHBlackjack() {
           }
           /* カード: 横画スマホで見やすいサイズに */
           .bj-card {
-            width: clamp(62px, 19vw, 90px) !important;
-            height: clamp(93px, 28.5vw, 135px) !important;
+            width: clamp(80px, 24vw, 108px) !important;
+            height: clamp(120px, 36vw, 162px) !important;
           }
-          .bj-card-label-num { font-size: clamp(12px, 3.6vw, 18px) !important; }
-          .bj-card-label-num-10 { font-size: clamp(10px, 3vw, 15px) !important; }
-          .bj-card-suit { font-size: clamp(6px, 1.8vw, 9px) !important; }
-          .bj-card-name { font-size: clamp(6px, 1.7vw, 7px) !important; }
-          .bj-card-bb { font-size: clamp(5px, 1.5vw, 6px) !important; }
+          .bj-card-label-num { font-size: clamp(13px, 3.8vw, 19px) !important; }
+          .bj-card-label-num-10 { font-size: clamp(11px, 3.2vw, 16px) !important; }
+          .bj-card-suit { font-size: clamp(7px, 2vw, 10px) !important; }
+          .bj-card-name { font-size: clamp(7px, 2vw, 9px) !important; }
+          .bj-card-bb { font-size: clamp(6px, 1.8vw, 8px) !important; }
           /* メインコンテナ: 上下左右の余白を削減 */
           .bj-main-container {
             padding: 12px 8px 24px !important;
@@ -1154,7 +1157,7 @@ export default function BFHBlackjack() {
                                 </>
                             )}
                             {phase === "result" && (
-                                <button className="bj-btn bj-btn-deal" onClick={() => startGame(unitPool)} style={{ marginTop: 80 }}>
+                                <button className="bj-btn bj-btn-deal" onClick={() => startGame(unitPool)}>
                                     DEAL AGAIN
                                 </button>
                             )}
