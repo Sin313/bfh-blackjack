@@ -329,7 +329,7 @@ export default function BFHBlackjack() {
     const [bestStreak, setBestStreak] = useState(0);
     const [muted, setMuted] = useState(false);
     const [showRules, setShowRules] = useState(false);
-    const [earnedBadges, setEarnedBadges] = useState<number[]>([]);
+    const [highestCrown, setHighestCrown] = useState<number>(0);  // 最高到達クラウンティア
     const [newBadgeAlert, setNewBadgeAlert] = useState<typeof STREAK_BADGES[number] | null>(null);
 
     // ──  バグ修正: deck/idx/dealing を useRef で管理 ──
@@ -342,12 +342,14 @@ export default function BFHBlackjack() {
 
     const setPhaseSync = (p: GamePhase) => { phaseRef.current = p; setPhase(p); };
 
-    // ── localStorage からベスト連勝・バッジを読み込む ──
+    // ── localStorage からベスト連勝・クラウン・スコアを読み込む ──
     useEffect(() => {
         const saved = parseInt(localStorage.getItem('bfh_best_streak') || '0', 10);
         if (!isNaN(saved)) setBestStreak(saved);
-        const badges = JSON.parse(localStorage.getItem('bfh_badges') || '[]') as number[];
-        setEarnedBadges(badges);
+        const hc = parseInt(localStorage.getItem('bfh_highest_crown') || '0', 10);
+        if (!isNaN(hc)) setHighestCrown(hc);
+        const savedScore = localStorage.getItem('bfh_score');
+        if (savedScore) try { setScore(JSON.parse(savedScore)); } catch { }
     }, []);
 
     // ── 効果音 (Web Audio API) ── mutedRef で確実にミュート判定 ──
@@ -580,14 +582,18 @@ export default function BFHBlackjack() {
 
         setResult(r);
         setPhaseSync("result");
-        setScore((prev) => ({
-            win: prev.win + (r === "win" || r === "blackjack" ? 1 : 0),
-            lose: prev.lose + (r === "lose" ? 1 : 0),
-            push: prev.push + (r === "push" ? 1 : 0),
-        }));
+        setScore((prev) => {
+            const updated = {
+                win: prev.win + (r === "win" || r === "blackjack" ? 1 : 0),
+                lose: prev.lose + (r === "lose" ? 1 : 0),
+                push: prev.push + (r === "push" ? 1 : 0),
+            };
+            localStorage.setItem('bfh_score', JSON.stringify(updated));
+            return updated;
+        });
         // 効果音
         playSound(r === "win" || r === "blackjack" ? 'win' : r === "lose" ? 'lose' : 'push');
-        // 連勝カウント + ベスト更新 + バッジチェック
+        // 連勝カウント + ベスト更新 + クラウンチェック
         if (r === "win" || r === "blackjack") {
             setWinStreak((prev) => {
                 const next = prev + 1;
@@ -599,17 +605,19 @@ export default function BFHBlackjack() {
                     }
                     return best;
                 });
-                // バッジチェック
+                // クラウンチェック: 既存より高いティアに達したときだけ通知
                 const badge = STREAK_BADGES.find(b => b.streak === next);
                 if (badge) {
-                    setEarnedBadges(eb => {
-                        if (eb.includes(badge.streak)) return eb;
-                        const updated = [...eb, badge.streak];
-                        localStorage.setItem('bfh_badges', JSON.stringify(updated));
-                        return updated;
+                    setHighestCrown(hc => {
+                        if (badge.streak > hc) {
+                            // 新しい上位クラウン獲得！
+                            localStorage.setItem('bfh_highest_crown', String(badge.streak));
+                            setNewBadgeAlert(badge as typeof STREAK_BADGES[number]);
+                            setTimeout(() => setNewBadgeAlert(null), 3500);
+                            return badge.streak;
+                        }
+                        return hc; // 既に同等以上 → 通知なし
                     });
-                    setNewBadgeAlert(badge);
-                    setTimeout(() => setNewBadgeAlert(null), 3500);
                 }
                 return next;
             });
@@ -900,27 +908,30 @@ export default function BFHBlackjack() {
                                     }}
                                 >{muted ? "🔇" : "🔊"}</button>
                             </div>
-                            {/* 獲得バッジ表示 */}
-                            {earnedBadges.length > 0 && (
-                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-                                    {STREAK_BADGES.filter(b => earnedBadges.includes(b.streak)).map(b => (
-                                        <span
-                                            key={b.streak}
-                                            title={`${b.rarity} — ${b.streak}連勝達成`}
-                                            style={{
-                                                display: 'inline-flex', cursor: "default",
-                                                filter: b.rainbow ? undefined : `drop-shadow(0 0 4px ${b.glow})`,
-                                                animation: b.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
-                                            }}
-                                        >
-                                            <CrownIcon color={b.color} rainbow={b.rainbow} size={20} />
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                            {/* リセットボタン */}
+                            {/* 最高クラウン1個表示 */}
+                            {highestCrown > 0 && (() => {
+                                const crown = [...STREAK_BADGES].reverse().find(b => b.streak <= highestCrown);
+                                return crown ? (
+                                    <span
+                                        title={`${crown.rarity} — ${crown.streak}連勝達成`}
+                                        style={{
+                                            display: 'inline-flex', cursor: 'default', marginTop: 4,
+                                            filter: crown.rainbow ? undefined : `drop-shadow(0 0 5px ${crown.glow})`,
+                                            animation: crown.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
+                                        }}
+                                    >
+                                        <CrownIcon color={crown.color} rainbow={crown.rainbow} size={22} />
+                                    </span>
+                                ) : null;
+                            })()}
+                            {/* スコアリセットボタン */}
                             <button
-                                onClick={() => { setScore({ win: 0, lose: 0, push: 0 }); setWinStreak(0); }}
+                                onClick={() => {
+                                    const cleared = { win: 0, lose: 0, push: 0 };
+                                    setScore(cleared);
+                                    setWinStreak(0);
+                                    localStorage.setItem('bfh_score', JSON.stringify(cleared));
+                                }}
                                 style={{
                                     marginBottom: 2,
                                     background: "none",
@@ -947,6 +958,7 @@ export default function BFHBlackjack() {
                                     b.style.textShadow = "none";
                                 }}
                             >RESULT<br />RESET</button>
+                                            <button onClick={() => { setHighestCrown(0); localStorage.removeItem("bfh_highest_crown"); }} style={{ marginBottom: 2, background: "none", border: "1px solid rgba(255,215,0,0.18)", borderRadius: 5, color: "rgba(255,215,0,0.3)", fontFamily: "Cinzel,serif", fontSize: 7.5, letterSpacing: 1.5, cursor: "pointer", padding: "4px 8px", lineHeight: 1.4, transition: "all 0.2s" }} onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,215,0,0.8)"; b.style.borderColor = "rgba(255,215,0,0.5)"; }} onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,215,0,0.3)"; b.style.borderColor = "rgba(255,215,0,0.18)"; }} >CROWN<br />RESET</button>
                         </div>
                     </div>
                     <div style={{ height: 1, background: "linear-gradient(90deg,transparent,rgba(255,140,0,0.4),rgba(255,60,0,0.3),transparent)", marginTop: 14 }} />
