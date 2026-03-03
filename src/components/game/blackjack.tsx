@@ -233,16 +233,16 @@ function Hand({ cards, label, total, animate, hideTotal, totalBelow }: {
 
     const totalEl = !hideTotal ? (
         <span style={{
-            fontFamily: "Cinzel,serif", fontSize: 22, fontWeight: 900,
+            fontFamily: "Cinzel,serif", fontSize: 32, fontWeight: 900,
             color: bust ? "#ff4444" : total >= 18 ? "#44ff88" : "#ffcc44",
             textShadow: bust ? "0 0 20px rgba(255,68,68,0.8)" : total >= 18 ? "0 0 20px rgba(68,255,136,0.6)" : "0 0 20px rgba(255,204,68,0.6)",
         }}>{total}{bust ? " BUST" : ""}</span>
     ) : (
-        <span style={{ fontFamily: "Cinzel,serif", fontSize: 22, fontWeight: 900, color: "rgba(255,140,0,0.3)" }}>?</span>
+        <span style={{ fontFamily: "Cinzel,serif", fontSize: 32, fontWeight: 900, color: "rgba(255,140,0,0.3)" }}>?</span>
     );
 
     const labelEl = (
-        <span style={{ fontFamily: "Cinzel,serif", fontSize: 10, color: "rgba(255,140,0,0.6)", letterSpacing: 3, textTransform: "uppercase" }}>{label}</span>
+        <span style={{ fontFamily: "Cinzel,serif", fontSize: 16, color: "rgba(255,140,0,0.6)", letterSpacing: 3, textTransform: "uppercase" }}>{label}</span>
     );
 
     return (
@@ -305,8 +305,8 @@ const STREAK_BADGES = [
     { streak: 2, rarity: "COMMON", color: "#7ecef4", glow: "rgba(126,206,244,0.6)", rainbow: false },
     { streak: 3, rarity: "UNCOMMON", color: "#aaee55", glow: "rgba(170,238,85,0.6)", rainbow: false },
     { streak: 5, rarity: "RARE", color: "#ffd700", glow: "rgba(255,215,0,0.6)", rainbow: false },
-    { streak: 10, rarity: "EPIC", color: "#ff4500", glow: "rgba(255,69,0,0.6)", rainbow: false },
-    { streak: 20, rarity: "LEGENDARY", color: "#ffd700", glow: "rgba(255,215,0,0.6)", rainbow: true },
+    { streak: 7, rarity: "EPIC", color: "#ff4500", glow: "rgba(255,69,0,0.6)", rainbow: false },
+    { streak: 10, rarity: "LEGENDARY", color: "#ffd700", glow: "rgba(255,215,0,0.6)", rainbow: true },
 ] as const;
 
 
@@ -364,23 +364,23 @@ export default function BFHBlackjack() {
             master.connect(ctx.destination);
 
             if (type === 'deal') {
-                // カード配布音: シャッ（カードスライド）
+                // カード配布音: シャッ（カードスライド） 音量を少し小さく、ピッチを低く
                 const duration = 0.09;
                 const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
                 const data = buf.getChannelData(0);
                 for (let i = 0; i < data.length; i++) {
                     const t = i / ctx.sampleRate;
                     const env = Math.sin(Math.PI * t / duration); // サインカーブ — 中心がぴーク
-                    data[i] = (Math.random() * 2 - 1) * env * 0.9;
+                    data[i] = (Math.random() * 2 - 1) * env * 0.45; // 音量を 0.9 から 0.45 にダウン
                 }
                 const src = ctx.createBufferSource();
                 src.buffer = buf;
-                // バンドパスフィルターで紙が滑る音質に
+                // バンドパスフィルターで少し低い音質に
                 const filter = ctx.createBiquadFilter();
                 filter.type = 'bandpass';
-                filter.frequency.setValueAtTime(4000, ctx.currentTime);
-                filter.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + duration);
-                filter.Q.value = 1.2;
+                filter.frequency.setValueAtTime(2600, ctx.currentTime); // 4000 -> 2600 に下げてキンキン音を減らす
+                filter.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + duration); // 1800 -> 900
+                filter.Q.value = 1.0; // 1.2 -> 1.0 (少し響きを丸める)
                 src.connect(filter); filter.connect(master); src.start();
             } else if (type === 'win') {
                 [[0, 523], [0.1, 659], [0.2, 784], [0.3, 1047]].forEach(([t, freq]) => {
@@ -621,7 +621,7 @@ export default function BFHBlackjack() {
                 }
                 return next;
             });
-        } else {
+        } else if (r === "lose") {
             setWinStreak(0);
         }
         dealing.current = false;
@@ -811,88 +811,20 @@ export default function BFHBlackjack() {
                             }} />
                         </div>
 
-                        {/* スコア: WIN列のみ縦並び (数字+連勝)、LOSE・DRAWは横並び */}
-                        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
-                            {/* WIN + 連勝バナー */}
-                            <div style={{ textAlign: "center" }}>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 9,
-                                    color: "rgba(255,255,255,0.4)", letterSpacing: 2,
-                                    marginBottom: 2,
-                                }}>WIN</div>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 28, fontWeight: 900,
-                                    color: "#44ff88", lineHeight: 1,
-                                    textShadow: "0 0 16px #44ff88aa, 0 2px 4px rgba(0,0,0,0.6)",
-                                }}>{score.win}</div>
-                                {/* ベスト連勝 */}
-                                {bestStreak >= 2 && (
-                                    <div style={{
-                                        fontFamily: "'Noto Sans JP',sans-serif",
-                                        fontSize: 8, color: "rgba(255,215,0,0.45)",
-                                        letterSpacing: 0.5, marginTop: 2,
-                                    }}>BEST {bestStreak}連勝</div>
-                                )}
-                                {/* 連勝: WINの真下 */}
-                                {winStreak >= 2 && (
-                                    <div style={{
-                                        fontFamily: "'Noto Sans JP',sans-serif",
-                                        fontSize: winStreak >= 5 ? 12 : 10,
-                                        fontWeight: 700,
-                                        marginTop: 3,
-                                        color: winStreak >= 5 ? "#ffd700" : winStreak >= 3 ? "#ff8c00" : "#ffcc44",
-                                        textShadow: winStreak >= 5
-                                            ? "0 0 14px rgba(255,215,0,1), 0 0 28px rgba(255,215,0,0.6)"
-                                            : winStreak >= 3
-                                                ? "0 0 10px rgba(255,140,0,0.9)"
-                                                : "0 0 8px rgba(255,204,68,0.7)",
-                                        letterSpacing: 0.5,
-                                        animation: winStreak >= 5 ? "bjPulse 0.8s ease-in-out infinite" : "none",
-                                        whiteSpace: "nowrap",
-                                    }}>{winStreak}連勝！{winStreak >= 10 ? "🔥🔥🔥" : winStreak >= 5 ? "🔥🔥" : winStreak >= 3 ? "🔥" : ""}</div>
-                                )}
-                            </div>
-                            {/* LOSE */}
-                            <div style={{ textAlign: "center" }}>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 9,
-                                    color: "rgba(255,255,255,0.4)", letterSpacing: 2,
-                                    marginBottom: 2,
-                                }}>LOSE</div>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 28, fontWeight: 900,
-                                    color: "#ff4444", lineHeight: 1,
-                                    textShadow: "0 0 16px #ff4444aa, 0 2px 4px rgba(0,0,0,0.6)",
-                                }}>{score.lose}</div>
-                            </div>
-                            {/* DRAW */}
-                            <div style={{ textAlign: "center" }}>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 9,
-                                    color: "rgba(255,255,255,0.4)", letterSpacing: 2,
-                                    marginBottom: 2,
-                                }}>DRAW</div>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 28, fontWeight: 900,
-                                    color: "#ffcc44", lineHeight: 1,
-                                    textShadow: "0 0 16px #ffcc44aa, 0 2px 4px rgba(0,0,0,0.6)",
-                                }}>{score.push}</div>
-                            </div>
-                            {/* MUTEボタン + ルールボタン */}
+                        {/* ── 右側: スコア類と設定ボタン ── */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                            {/* 上段: 設定・リセットボタン */}
                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                 <button
                                     onClick={() => setShowRules(true)}
                                     title="ルールを見る"
                                     style={{
-                                        background: "rgba(255,255,255,0.05)",
-                                        border: "1px solid rgba(255,255,255,0.12)",
-                                        borderRadius: 6, color: "rgba(255,255,255,0.45)",
-                                        fontFamily: "Cinzel,serif", fontSize: 11,
-                                        cursor: "pointer", padding: "5px 10px",
-                                        transition: "all 0.2s",
+                                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
+                                        borderRadius: 6, color: "rgba(255,255,255,0.6)",
+                                        fontFamily: "Cinzel,serif", fontSize: 13, cursor: "pointer", padding: "5px 12px", transition: "all 0.2s",
                                     }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,215,0,0.8)"; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.6)"; }}
                                 >?</button>
                                 <button
                                     onClick={() => { mutedRef.current = !muted; setMuted(m => !m); }}
@@ -900,65 +832,95 @@ export default function BFHBlackjack() {
                                     style={{
                                         background: muted ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.05)",
                                         border: `1px solid ${muted ? "rgba(255,100,100,0.3)" : "rgba(255,255,255,0.12)"}`,
-                                        borderRadius: 6,
-                                        color: muted ? "rgba(255,100,100,0.7)" : "rgba(255,255,255,0.45)",
-                                        fontFamily: "Cinzel,serif", fontSize: 11,
-                                        cursor: "pointer", padding: "5px 10px",
-                                        transition: "all 0.2s",
+                                        borderRadius: 6, color: muted ? "rgba(255,100,100,0.8)" : "rgba(255,255,255,0.6)",
+                                        fontFamily: "Cinzel,serif", fontSize: 13, cursor: "pointer", padding: "5px 12px", transition: "all 0.2s",
                                     }}
                                 >{muted ? "🔇" : "🔊"}</button>
+                                {/* スコアリセット */}
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm("スコア（W/L/D および連勝）をリセットしてもよろしいですか？")) {
+                                            const cleared = { win: 0, lose: 0, push: 0 };
+                                            setScore(cleared); setWinStreak(0);
+                                            localStorage.setItem('bfh_score', JSON.stringify(cleared));
+                                        }
+                                    }}
+                                    style={{
+                                        background: "none", border: "1px solid rgba(255,255,255,0.18)",
+                                        borderRadius: 5, color: "rgba(255,255,255,0.5)",
+                                        fontFamily: "'Noto Sans JP',sans-serif", fontSize: 9, letterSpacing: 1,
+                                        cursor: "pointer", padding: "4px 8px", lineHeight: 1.3, transition: "all 0.2s",
+                                    }}
+                                    onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,100,80,0.9)"; b.style.borderColor = "rgba(255,100,80,0.6)"; b.style.background = "rgba(255,100,80,0.1)"; }}
+                                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,255,255,0.5)"; b.style.borderColor = "rgba(255,255,255,0.18)"; b.style.background = "none"; }}
+                                >スコア<br />リセット</button>
+                                {/* クラウンリセット */}
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm("クラウン（最高到達ランク）をリセットしてもよろしいですか？")) {
+                                            setHighestCrown(0);
+                                            localStorage.removeItem("bfh_highest_crown");
+                                        }
+                                    }}
+                                    style={{
+                                        background: "none", border: "1px solid rgba(255,215,0,0.25)",
+                                        borderRadius: 5, color: "rgba(255,215,0,0.7)",
+                                        fontFamily: "'Noto Sans JP',sans-serif", fontSize: 9, letterSpacing: 1,
+                                        cursor: "pointer", padding: "4px 8px", lineHeight: 1.3, transition: "all 0.2s",
+                                    }}
+                                    onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,215,0,1)"; b.style.borderColor = "rgba(255,215,0,0.8)"; b.style.background = "rgba(255,215,0,0.1)"; }}
+                                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,215,0,0.7)"; b.style.borderColor = "rgba(255,215,0,0.25)"; b.style.background = "none"; }}
+                                >クラウン<br />リセット</button>
                             </div>
-                            {/* 最高クラウン1個表示 */}
-                            {highestCrown > 0 && (() => {
-                                const crown = [...STREAK_BADGES].reverse().find(b => b.streak <= highestCrown);
-                                return crown ? (
-                                    <span
-                                        title={`${crown.rarity} — ${crown.streak}連勝達成`}
-                                        style={{
-                                            display: 'inline-flex', cursor: 'default', marginTop: 4,
-                                            filter: crown.rainbow ? undefined : `drop-shadow(0 0 5px ${crown.glow})`,
-                                            animation: crown.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
-                                        }}
-                                    >
-                                        <CrownIcon color={crown.color} rainbow={crown.rainbow} size={22} />
-                                    </span>
-                                ) : null;
-                            })()}
-                            {/* スコアリセットボタン */}
-                            <button
-                                onClick={() => {
-                                    const cleared = { win: 0, lose: 0, push: 0 };
-                                    setScore(cleared);
-                                    setWinStreak(0);
-                                    localStorage.setItem('bfh_score', JSON.stringify(cleared));
-                                }}
-                                style={{
-                                    marginBottom: 2,
-                                    background: "none",
-                                    border: "1px solid rgba(255,255,255,0.18)",
-                                    borderRadius: 5,
-                                    color: "rgba(255,255,255,0.35)",
-                                    fontFamily: "Cinzel,serif",
-                                    fontSize: 7.5, letterSpacing: 1.5,
-                                    cursor: "pointer",
-                                    padding: "4px 8px",
-                                    lineHeight: 1.4,
-                                    transition: "all 0.2s",
-                                }}
-                                onMouseEnter={(e) => {
-                                    const b = e.currentTarget as HTMLButtonElement;
-                                    b.style.color = "rgba(255,100,80,0.85)";
-                                    b.style.borderColor = "rgba(255,100,80,0.5)";
-                                    b.style.textShadow = "0 0 8px rgba(255,80,60,0.6)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    const b = e.currentTarget as HTMLButtonElement;
-                                    b.style.color = "rgba(255,255,255,0.35)";
-                                    b.style.borderColor = "rgba(255,255,255,0.18)";
-                                    b.style.textShadow = "none";
-                                }}
-                            >RESULT<br />RESET</button>
-                                            <button onClick={() => { setHighestCrown(0); localStorage.removeItem("bfh_highest_crown"); }} style={{ marginBottom: 2, background: "none", border: "1px solid rgba(255,215,0,0.18)", borderRadius: 5, color: "rgba(255,215,0,0.3)", fontFamily: "Cinzel,serif", fontSize: 7.5, letterSpacing: 1.5, cursor: "pointer", padding: "4px 8px", lineHeight: 1.4, transition: "all 0.2s" }} onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,215,0,0.8)"; b.style.borderColor = "rgba(255,215,0,0.5)"; }} onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "rgba(255,215,0,0.3)"; b.style.borderColor = "rgba(255,215,0,0.18)"; }} >CROWN<br />RESET</button>
+
+                            {/* 下段: W/L/D スコアとクラウン */}
+                            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "flex-end" }}>
+                                {/* 最高クラウン1個表示 */}
+                                {highestCrown > 0 && (() => {
+                                    const crown = [...STREAK_BADGES].reverse().find(b => b.streak <= highestCrown);
+                                    return crown ? (
+                                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 14, marginRight: 8 }}>
+                                            <span
+                                                title={`${crown.rarity} — ${crown.streak}連勝達成`}
+                                                style={{
+                                                    display: 'inline-flex', cursor: 'default',
+                                                    filter: crown.rainbow ? undefined : `drop-shadow(0 0 5px ${crown.glow})`,
+                                                    animation: crown.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
+                                                }}
+                                            >
+                                                <CrownIcon color={crown.color} rainbow={crown.rainbow} size={32} />
+                                            </span>
+                                        </div>
+                                    ) : null;
+                                })()}
+
+                                {/* WIN + 連勝バナー */}
+                                <div style={{ textAlign: "center", minWidth: 40 }}>
+                                    <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: 2, marginBottom: 2 }}>WIN</div>
+                                    <div style={{ fontFamily: "Cinzel,serif", fontSize: 28, fontWeight: 900, color: "#44ff88", lineHeight: 1, textShadow: "0 0 16px #44ff88aa, 0 2px 4px rgba(0,0,0,0.6)" }}>{score.win}</div>
+                                    {bestStreak >= 2 && (
+                                        <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 8, color: "rgba(255,215,0,0.45)", letterSpacing: 0.5, marginTop: 4 }}>BEST {bestStreak}連勝</div>
+                                    )}
+                                    {winStreak >= 2 && (
+                                        <div style={{
+                                            fontFamily: "'Noto Sans JP',sans-serif", fontSize: winStreak >= 5 ? 12 : 10, fontWeight: 700, marginTop: 2,
+                                            color: winStreak >= 5 ? "#ffd700" : winStreak >= 3 ? "#ff8c00" : "#ffcc44",
+                                            textShadow: winStreak >= 5 ? "0 0 14px rgba(255,215,0,1)" : winStreak >= 3 ? "0 0 10px rgba(255,140,0,0.9)" : "0 0 8px rgba(255,204,68,0.7)",
+                                            animation: winStreak >= 5 ? "bjPulse 0.8s ease-in-out infinite" : "none", whiteSpace: "nowrap",
+                                        }}>{winStreak}連勝</div>
+                                    )}
+                                </div>
+                                {/* LOSE */}
+                                <div style={{ textAlign: "center", minWidth: 40 }}>
+                                    <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: 2, marginBottom: 2 }}>LOSE</div>
+                                    <div style={{ fontFamily: "Cinzel,serif", fontSize: 28, fontWeight: 900, color: "#ff4444", lineHeight: 1, textShadow: "0 0 16px #ff4444aa, 0 2px 4px rgba(0,0,0,0.6)" }}>{score.lose}</div>
+                                </div>
+                                {/* DRAW */}
+                                <div style={{ textAlign: "center", minWidth: 40 }}>
+                                    <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: 2, marginBottom: 2 }}>DRAW</div>
+                                    <div style={{ fontFamily: "Cinzel,serif", fontSize: 28, fontWeight: 900, color: "#ffcc44", lineHeight: 1, textShadow: "0 0 16px #ffcc44aa, 0 2px 4px rgba(0,0,0,0.6)" }}>{score.push}</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div style={{ height: 1, background: "linear-gradient(90deg,transparent,rgba(255,140,0,0.4),rgba(255,60,0,0.3),transparent)", marginTop: 14 }} />
@@ -1130,7 +1092,27 @@ export default function BFHBlackjack() {
                     <div style={{ width: "100%", maxWidth: 560, display: "flex", flexDirection: "column", gap: 24, position: "relative" }}>
 
                         <Hand cards={dealerHand} label="DEALER" total={dTotal} animate={animate} hideTotal={phase === "playing"} totalBelow />
-                        <div style={{ height: 1, background: "linear-gradient(90deg,transparent,rgba(255,140,0,0.2),transparent)" }} />
+
+                        {/* 中央分割線 ＆ HIT/STANDボタンのアンカー */}
+                        <div style={{ position: "relative", width: "100%" }}>
+                            <div style={{ height: 1, width: "100%", background: "linear-gradient(90deg,transparent,rgba(255,140,0,0.2),transparent)" }} />
+
+                            {phase === "playing" && (
+                                <>
+                                    {/* HIT は線より上 */}
+                                    <button className="bj-btn bj-btn-hit" onClick={() => hit(playerHand, dealerHand, unitPool)}
+                                        style={{ position: "absolute", bottom: 12, left: 0, width: 96, padding: "16px 0", fontSize: 15, textAlign: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.5)", zIndex: 90 }}>
+                                        HIT
+                                    </button>
+                                    {/* STAND は線より下 */}
+                                    <button className="bj-btn bj-btn-stand" onClick={() => stand(playerHand, dealerHand, unitPool)}
+                                        style={{ position: "absolute", top: 12, left: 0, width: 96, padding: "16px 0", fontSize: 15, textAlign: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.5)", zIndex: 90 }}>
+                                        STAND
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
                         <Hand cards={playerHand} label="YOU" total={pTotal} animate={animate} />
 
                         {/* RESULT OVERLAY */}
@@ -1138,54 +1120,49 @@ export default function BFHBlackjack() {
                             <div style={{
                                 position: "absolute", top: "50%", left: "50%",
                                 transform: "translate(-50%,-50%)",
-                                background: "rgba(0,0,0,0.90)",
+                                background: "rgba(0,0,0,0.92)",
                                 border: `1px solid ${resultConfig[result].color}`,
-                                borderRadius: 14, padding: "22px 44px",
-                                textAlign: "center", zIndex: 30,
+                                borderRadius: 14, padding: "28px 48px",
+                                textAlign: "center", zIndex: 100,
                                 boxShadow: `0 0 40px ${resultConfig[result].glow}, 0 0 80px ${resultConfig[result].glow}`,
                                 animation: "bjResultPop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards",
-                                backdropFilter: "blur(10px)",
-                                minWidth: 220,
+                                backdropFilter: "blur(12px)",
+                                minWidth: 260,
+                                display: "flex", flexDirection: "column", alignItems: "center", gap: 20
                             }}>
-                                <div style={{
-                                    fontFamily: "'Cinzel Decorative',Cinzel,serif", fontSize: 26, fontWeight: 900,
-                                    color: resultConfig[result].color,
-                                    textShadow: `0 0 30px ${resultConfig[result].glow}`,
-                                    letterSpacing: 3,
-                                }}>{resultConfig[result].text}</div>
-                                <div style={{
-                                    fontFamily: "Cinzel,serif", fontSize: 13,
-                                    color: "rgba(255,255,255,0.45)", marginTop: 6, letterSpacing: 2,
-                                }}>{pTotal} vs {dTotal}</div>
+                                <div>
+                                    <div style={{
+                                        fontFamily: "'Cinzel Decorative',Cinzel,serif", fontSize: 32, fontWeight: 900,
+                                        color: resultConfig[result].color,
+                                        textShadow: `0 0 30px ${resultConfig[result].glow}`,
+                                        letterSpacing: 2,
+                                    }}>{resultConfig[result].text}</div>
+                                    <div style={{
+                                        fontFamily: "Cinzel,serif", fontSize: 14,
+                                        color: "rgba(255,255,255,0.6)", marginTop: 6, letterSpacing: 2,
+                                    }}>{pTotal} vs {dTotal}</div>
+                                </div>
+                                <button className="bj-btn bj-btn-deal" onClick={() => startGame(unitPool)}>
+                                    DEAL AGAIN
+                                </button>
                             </div>
                         )}
 
                         {/* BUTTONS */}
-                        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
-                            {phase === "playing" && (
-                                <>
-                                    <button className="bj-btn bj-btn-hit" onClick={() => hit(playerHand, dealerHand, unitPool)}>HIT</button>
-                                    <button className="bj-btn bj-btn-stand" onClick={() => stand(playerHand, dealerHand, unitPool)}>STAND</button>
-                                </>
-                            )}
-                            {phase === "result" && (
-                                <button className="bj-btn bj-btn-deal" onClick={() => startGame(unitPool)}>
-                                    DEAL AGAIN
-                                </button>
-                            )}
-                            {phase === "dealer" && (
+                        {phase === "dealer" && (
+                            <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
                                 <div style={{ fontFamily: "Cinzel,serif", fontSize: 11, color: "rgba(255,140,0,0.4)", letterSpacing: 3, animation: "bjPulse 1s ease-in-out infinite" }}>
                                     DEALER DRAWING...
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         <div style={{ textAlign: "center", fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,140,0,0.18)", letterSpacing: 2 }}>
                             DECK · {Math.max(0, deckRef.current.length - idxRef.current)} REMAINING
                         </div>
                     </div>
                 )}
-            </div>
+            </div >
         </>
     );
 }

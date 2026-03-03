@@ -1,9 +1,5 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Sword, Zap } from "lucide-react";
-import Image from "next/image";
 export default function Home() {
   const handleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_BFH_CLIENT_ID || 'your_client_id_here';
@@ -11,57 +7,104 @@ export default function Home() {
     const redirectUri = `${window.location.origin}/callback`;
     const scope = 'openid profile email offline_access';
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
     const url = `${authUrl}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${state}`;
     window.location.href = url;
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] -z-10 animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] -z-10 animate-pulse delay-700" />
+    <main style={{
+      minHeight: '100svh',
+      background: 'radial-gradient(ellipse at 50% 20%, #1a0900 0%, #080810 60%, #030306 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: "'Noto Sans JP', sans-serif",
+      userSelect: 'none',
+      padding: '24px',
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cinzel+Decorative:wght@700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
+        @keyframes shimmer {
+          0%  { background-position: -400% center; }
+          100%{ background-position:  400% center; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-8px); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(255,140,0,0.3), 0 0 40px rgba(255,60,0,0.15); }
+          50%       { box-shadow: 0 0 40px rgba(255,140,0,0.6), 0 0 80px rgba(255,60,0,0.3); }
+        }
+        .login-btn {
+          background: linear-gradient(135deg, rgba(255,140,0,0.15), rgba(255,60,0,0.1));
+          border: 1px solid rgba(255,140,0,0.5);
+          border-radius: 12px;
+          color: #ffaa00;
+          font-family: 'Cinzel Decorative', Cinzel, serif;
+          font-size: 17px;
+          font-weight: 700;
+          letter-spacing: 3px;
+          padding: 18px 56px;
+          cursor: pointer;
+          transition: all 0.3s;
+          text-transform: uppercase;
+          animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+        .login-btn:hover {
+          background: linear-gradient(135deg, rgba(255,140,0,0.3), rgba(255,60,0,0.2));
+          color: #ffd700;
+          transform: scale(1.04);
+        }
+        .card-suit {
+          animation: float 3s ease-in-out infinite;
+          display: inline-block;
+        }
+      `}</style>
 
-      <div className="max-w-4xl w-full space-y-8 text-center">
-        <div className="space-y-4">
-          <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight text-glow bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-            BFH FORGE DASHBOARD
-          </h1>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto font-sans">
-            Brave Frontier Heroes External API を活用して、あなたの冒険をデータでサポートします。
-          </p>
+      {/* 王冠デコ */}
+      <div style={{ marginBottom: 8, fontSize: 36, animation: 'float 3s ease-in-out infinite' }}>♠</div>
+
+      {/* タイトル */}
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{
+          fontFamily: "'Cinzel Decorative', Cinzel, serif",
+          fontWeight: 900,
+          fontSize: 'clamp(28px, 8vw, 48px)',
+          background: 'linear-gradient(90deg, #ff3300, #ffd700, #ff8c00, #ffd700, #ff3300)',
+          backgroundSize: '300% auto',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          animation: 'shimmer 4s linear infinite',
+          lineHeight: 1.15,
+          letterSpacing: 2,
+        }}>
+          BFH<br />BLACKJACK
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
-          {[
-            { icon: <Sword className="w-8 h-8 text-blue-400" />, title: "Hero Stats", desc: "ヒーローのステータスを詳細に分析" },
-            { icon: <ShieldCheck className="w-8 h-8 text-green-400" />, title: "Assets", desc: "所持ユニット・スフィアを一括管理" },
-            { icon: <Zap className="w-8 h-8 text-yellow-400" />, title: "Battle Logs", desc: "ランクマッチのログを可視化" },
-          ].map((feature, i) => (
-            <Card key={i} className="glass-card hover:border-blue-500/50 transition-all duration-300">
-              <CardHeader className="items-center">
-                <div className="p-3 bg-white/5 rounded-2xl mb-2">{feature.icon}</div>
-                <CardTitle className="font-display">{feature.title}</CardTitle>
-                <CardDescription className="text-slate-400">{feature.desc}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-
-        <div className="flex flex-col items-center gap-4">
-          <Button
-            onClick={handleLogin}
-            size="lg"
-            className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 border-none shadow-lg shadow-blue-500/20 rounded-xl group transition-all"
-          >
-            ブレヒロでログイン
-            <Zap className="ml-2 w-5 h-5 group-hover:animate-bounce" />
-          </Button>
-          <p className="text-sm text-slate-500">
-            OAuth2 認証により、安全に情報を取得します
-          </p>
-        </div>
       </div>
+
+      {/* スーツデコライン */}
+      <div style={{ display: 'flex', gap: 20, color: 'rgba(255,140,0,0.3)', fontSize: 18, marginBottom: 48 }}>
+        <span>♠</span><span>♥</span><span>♦</span><span>♣</span>
+      </div>
+
+      {/* ログインボタン */}
+      <button className="login-btn" onClick={handleLogin}>
+        ブレヒロでログイン
+      </button>
+
+      <p style={{
+        marginTop: 20,
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.2)',
+        letterSpacing: 1,
+        fontFamily: "'Noto Sans JP', sans-serif",
+      }}>
+        BFH アカウントで認証して遊ぶ
+      </p>
     </main>
   );
 }
