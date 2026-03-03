@@ -284,8 +284,10 @@ export default function BFHBlackjack() {
     const [result, setResult] = useState<Result | null>(null);
     const [animate, setAnimate] = useState(false);
     const [score, setScore] = useState({ win: 0, lose: 0, push: 0 });
-    const [winStreak, setWinStreak] = useState(0);  // 連勝カウント
-    const [bestStreak, setBestStreak] = useState(0); // ベスト連勝（localStorage）
+    const [winStreak, setWinStreak] = useState(0);
+    const [bestStreak, setBestStreak] = useState(0);
+    const [muted, setMuted] = useState(false);     // ミュート
+    const [showRules, setShowRules] = useState(false); // ルール表示
 
     // ──  バグ修正: deck/idx/dealing を useRef で管理し二重ドローを防ぐ ──
     const deckRef = useRef<GameCard[]>([]);
@@ -304,6 +306,7 @@ export default function BFHBlackjack() {
 
     // ── 効果音 (Web Audio API) ──
     const playSound = useCallback((type: 'deal' | 'win' | 'lose' | 'push') => {
+        if (muted) return; // ミュート中はスキップ
         try {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
             if (!AudioCtx) return;
@@ -313,55 +316,53 @@ export default function BFHBlackjack() {
             master.connect(ctx.destination);
 
             if (type === 'deal') {
-                // カード配布音: 短いホワイトノイズ
                 const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate);
                 const data = buf.getChannelData(0);
                 for (let i = 0; i < data.length; i++) {
                     data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
                 }
                 const src = ctx.createBufferSource();
-                src.buffer = buf;
-                src.connect(master);
-                src.start();
+                src.buffer = buf; src.connect(master); src.start();
             } else if (type === 'win') {
-                // 勝利音: 上昇アルペジオ
                 [[0, 523], [0.1, 659], [0.2, 784], [0.3, 1047]].forEach(([t, freq]) => {
                     const osc = ctx.createOscillator();
                     const g = ctx.createGain();
-                    osc.frequency.value = freq;
-                    osc.type = 'sine';
+                    osc.frequency.value = freq; osc.type = 'sine';
                     g.gain.setValueAtTime(0.25, ctx.currentTime + t);
                     g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.35);
                     osc.connect(g); g.connect(master);
-                    osc.start(ctx.currentTime + t);
-                    osc.stop(ctx.currentTime + t + 0.4);
+                    osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.4);
                 });
             } else if (type === 'lose') {
-                // 敗北音: 下降トーン
-                [[0, 330], [0.18, 247], [0.34, 196]].forEach(([t, freq]) => {
-                    const osc = ctx.createOscillator();
-                    const g = ctx.createGain();
-                    osc.frequency.value = freq;
-                    osc.type = 'sawtooth';
-                    g.gain.setValueAtTime(0.18, ctx.currentTime + t);
-                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.28);
-                    osc.connect(g); g.connect(master);
-                    osc.start(ctx.currentTime + t);
-                    osc.stop(ctx.currentTime + t + 0.3);
+                // 敗北音: 短調和音が下降する重厚なサウンド
+                const chords = [
+                    [0, [392, 466, 494]],  // G-Bb-B短調
+                    [0.25, [349, 440, 466]],  // F-A-Bb下降
+                    [0.5, [294, 370, 392]],  // D-F#-G
+                    [0.75, [261, 311, 349]],  // C-Eb-F 終決
+                ] as [number, number[]][];
+                chords.forEach(([t, freqs]) => {
+                    freqs.forEach((freq) => {
+                        const osc = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        osc.frequency.value = freq; osc.type = 'sine';
+                        g.gain.setValueAtTime(0.12, ctx.currentTime + t);
+                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.45);
+                        osc.connect(g); g.connect(master);
+                        osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.5);
+                    });
                 });
             } else {
-                // 引き分け音: ニュートラル
                 const osc = ctx.createOscillator();
                 const g = ctx.createGain();
-                osc.frequency.value = 440;
-                osc.type = 'sine';
+                osc.frequency.value = 440; osc.type = 'sine';
                 g.gain.setValueAtTime(0.18, ctx.currentTime);
                 g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
                 osc.connect(g); g.connect(master);
                 osc.start(); osc.stop(ctx.currentTime + 0.32);
             }
-        } catch { /* 音声非対応環境では無音 */ }
-    }, []);
+        } catch { }
+    }, [muted]);
 
     function drawCard(pool: DisplayUnit[]): GameCard {
         if (idxRef.current >= deckRef.current.length) {
@@ -752,10 +753,10 @@ export default function BFHBlackjack() {
                                 {/* ベスト連勝 */}
                                 {bestStreak >= 2 && (
                                     <div style={{
-                                        fontFamily: "Cinzel,serif",
-                                        fontSize: 8, color: "rgba(255,215,0,0.4)",
-                                        letterSpacing: 1, marginTop: 2,
-                                    }}>BEST {bestStreak}</div>
+                                        fontFamily: "'Noto Sans JP',sans-serif",
+                                        fontSize: 8, color: "rgba(255,215,0,0.45)",
+                                        letterSpacing: 0.5, marginTop: 2,
+                                    }}>BEST {bestStreak}連勝</div>
                                 )}
                                 {/* 連勝: WINの真下 */}
                                 {winStreak >= 2 && (
@@ -802,11 +803,41 @@ export default function BFHBlackjack() {
                                     textShadow: "0 0 16px #ffcc44aa, 0 2px 4px rgba(0,0,0,0.6)",
                                 }}>{score.push}</div>
                             </div>
+                            {/* MUTEボタン + ルールボタン */}
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <button
+                                    onClick={() => setShowRules(true)}
+                                    title="ルールを見る"
+                                    style={{
+                                        background: "rgba(255,255,255,0.05)",
+                                        border: "1px solid rgba(255,255,255,0.12)",
+                                        borderRadius: 6, color: "rgba(255,255,255,0.45)",
+                                        fontFamily: "Cinzel,serif", fontSize: 11,
+                                        cursor: "pointer", padding: "5px 10px",
+                                        transition: "all 0.2s",
+                                    }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,215,0,0.8)"; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}
+                                >?</button>
+                                <button
+                                    onClick={() => setMuted(m => !m)}
+                                    title={muted ? "音オン" : "ミュート"}
+                                    style={{
+                                        background: muted ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.05)",
+                                        border: `1px solid ${muted ? "rgba(255,100,100,0.3)" : "rgba(255,255,255,0.12)"}`,
+                                        borderRadius: 6,
+                                        color: muted ? "rgba(255,100,100,0.7)" : "rgba(255,255,255,0.45)",
+                                        fontFamily: "Cinzel,serif", fontSize: 11,
+                                        cursor: "pointer", padding: "5px 10px",
+                                        transition: "all 0.2s",
+                                    }}
+                                >{muted ? "🔇" : "🔊"}</button>
+                            </div>
                             {/* リセットボタン */}
                             <button
                                 onClick={() => { setScore({ win: 0, lose: 0, push: 0 }); setWinStreak(0); }}
                                 style={{
-                                    alignSelf: "flex-end", marginBottom: 2,
+                                    marginBottom: 2,
                                     background: "none",
                                     border: "1px solid rgba(255,255,255,0.18)",
                                     borderRadius: 5,
@@ -872,6 +903,47 @@ export default function BFHBlackjack() {
                         ) : (
                             <button className="bj-btn bj-btn-deal" onClick={() => window.location.reload()} style={{ marginTop: 8 }}>RETRY</button>
                         )}
+                    </div>
+                )}
+
+                {/* ── RULES MODAL ── */}
+                {showRules && (
+                    <div
+                        onClick={() => setShowRules(false)}
+                        style={{
+                            position: "fixed", inset: 0, zIndex: 100,
+                            background: "rgba(0,0,0,0.85)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            backdropFilter: "blur(6px)",
+                        }}
+                    >
+                        <div
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                background: "linear-gradient(135deg,#1a0a00,#0d0d18)",
+                                border: "1px solid rgba(255,140,0,0.3)",
+                                borderRadius: 16, padding: "32px 28px",
+                                maxWidth: 320, width: "90%",
+                                textAlign: "center",
+                                boxShadow: "0 0 60px rgba(255,140,0,0.15)",
+                            }}
+                        >
+                            <div style={{ fontFamily: "Cinzel,serif", fontSize: 13, color: "rgba(255,140,0,0.8)", letterSpacing: 3, marginBottom: 20 }}>HOW TO PLAY</div>
+                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 2.2, textAlign: "left" }}>
+                                🃏 あなたのユニットがカードになります<br />
+                                🎯 合計値を21に近づけよう<br />
+                                ✋ <b style={{ color: "rgba(255,180,0,0.9)" }}>HIT</b> でカード追加<br />
+                                🛑 <b style={{ color: "rgba(100,200,255,0.9)" }}>STAND</b> でディーラーと勝負<br />
+                                💥 21を超えるとバースト（負け）<br />
+                                ⚡ 最初の2枚で21 = <b style={{ color: "#ffd700" }}>BLACKJACK！</b><br />
+                                🎰 ディーラーは17以上で止まる
+                            </div>
+                            <button
+                                onClick={() => setShowRules(false)}
+                                className="bj-btn bj-btn-deal"
+                                style={{ marginTop: 24, fontSize: 12, padding: "10px 28px" }}
+                            >CLOSE</button>
+                        </div>
                     </div>
                 )}
 
