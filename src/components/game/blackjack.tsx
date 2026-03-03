@@ -285,6 +285,7 @@ export default function BFHBlackjack() {
     const [animate, setAnimate] = useState(false);
     const [score, setScore] = useState({ win: 0, lose: 0, push: 0 });
     const [winStreak, setWinStreak] = useState(0);  // 連勝カウント
+    const [bestStreak, setBestStreak] = useState(0); // ベスト連勝（localStorage）
 
     // ──  バグ修正: deck/idx/dealing を useRef で管理し二重ドローを防ぐ ──
     const deckRef = useRef<GameCard[]>([]);
@@ -294,6 +295,73 @@ export default function BFHBlackjack() {
     const [, forceRender] = useState(0); // レンダリング用トリガー
 
     const setPhaseSync = (p: GamePhase) => { phaseRef.current = p; setPhase(p); };
+
+    // ── localStorage からベスト連勝を読み込む ──
+    useEffect(() => {
+        const saved = parseInt(localStorage.getItem('bfh_best_streak') || '0', 10);
+        if (!isNaN(saved)) setBestStreak(saved);
+    }, []);
+
+    // ── 効果音 (Web Audio API) ──
+    const playSound = useCallback((type: 'deal' | 'win' | 'lose' | 'push') => {
+        try {
+            const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const master = ctx.createGain();
+            master.gain.value = 0.25;
+            master.connect(ctx.destination);
+
+            if (type === 'deal') {
+                // カード配布音: 短いホワイトノイズ
+                const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+                }
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.connect(master);
+                src.start();
+            } else if (type === 'win') {
+                // 勝利音: 上昇アルペジオ
+                [[0, 523], [0.1, 659], [0.2, 784], [0.3, 1047]].forEach(([t, freq]) => {
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    g.gain.setValueAtTime(0.25, ctx.currentTime + t);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.35);
+                    osc.connect(g); g.connect(master);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.4);
+                });
+            } else if (type === 'lose') {
+                // 敗北音: 下降トーン
+                [[0, 330], [0.18, 247], [0.34, 196]].forEach(([t, freq]) => {
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.frequency.value = freq;
+                    osc.type = 'sawtooth';
+                    g.gain.setValueAtTime(0.18, ctx.currentTime + t);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.28);
+                    osc.connect(g); g.connect(master);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.3);
+                });
+            } else {
+                // 引き分け音: ニュートラル
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.frequency.value = 440;
+                osc.type = 'sine';
+                g.gain.setValueAtTime(0.18, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                osc.connect(g); g.connect(master);
+                osc.start(); osc.stop(ctx.currentTime + 0.32);
+            }
+        } catch { /* 音声非対応環境では無音 */ }
+    }, []);
 
     function drawCard(pool: DisplayUnit[]): GameCard {
         if (idxRef.current >= deckRef.current.length) {
@@ -361,6 +429,7 @@ export default function BFHBlackjack() {
         if (dealing.current || pool.length === 0) return;
         resolvedRef.current = false; // 新ゲームでリセット
         dealing.current = true;
+        playSound('deal');
 
         // 毎ゲーム新デッキ生成
         deckRef.current = shuffle(buildGameDeck(pool));
@@ -388,7 +457,7 @@ export default function BFHBlackjack() {
             }
         }, 100);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [playSound]);
 
     // ---- Hit: dealing ref でガード ----
     // currentDealer も引数で受け取ることで setState 内副作用を排除
@@ -397,6 +466,7 @@ export default function BFHBlackjack() {
         dealing.current = true;
 
         const newCard = drawCard(pool);
+        playSound('deal');
         const newHand = [...currentPlayer, newCard];
         setPlayer(newHand);
 
@@ -462,9 +532,21 @@ export default function BFHBlackjack() {
             lose: prev.lose + (r === "lose" ? 1 : 0),
             push: prev.push + (r === "push" ? 1 : 0),
         }));
-        // 連勝カウント: 関数形式updaterで値を直接セット（二重加算防止）
+        // 効果音
+        playSound(r === "win" || r === "blackjack" ? 'win' : r === "lose" ? 'lose' : 'push');
+        // 連勝カウント + ベスト更新
         if (r === "win" || r === "blackjack") {
-            setWinStreak((prev) => prev + 1);
+            setWinStreak((prev) => {
+                const next = prev + 1;
+                setBestStreak((best) => {
+                    if (next > best) {
+                        localStorage.setItem('bfh_best_streak', String(next));
+                        return next;
+                    }
+                    return best;
+                });
+                return next;
+            });
         } else {
             setWinStreak(0);
         }
@@ -667,6 +749,14 @@ export default function BFHBlackjack() {
                                     color: "#44ff88", lineHeight: 1,
                                     textShadow: "0 0 16px #44ff88aa, 0 2px 4px rgba(0,0,0,0.6)",
                                 }}>{score.win}</div>
+                                {/* ベスト連勝 */}
+                                {bestStreak >= 2 && (
+                                    <div style={{
+                                        fontFamily: "Cinzel,serif",
+                                        fontSize: 8, color: "rgba(255,215,0,0.4)",
+                                        letterSpacing: 1, marginTop: 2,
+                                    }}>BEST {bestStreak}</div>
+                                )}
                                 {/* 連勝: WINの真下 */}
                                 {winStreak >= 2 && (
                                     <div style={{
@@ -798,6 +888,24 @@ export default function BFHBlackjack() {
                             </div>
                         </div>
                         <button className="bj-btn bj-btn-deal" onClick={() => startGame(unitPool)}>DEAL</button>
+
+                        {/* ルール説明 */}
+                        <div style={{
+                            textAlign: "center",
+                            color: "rgba(255,255,255,0.2)",
+                            fontSize: 10,
+                            fontFamily: "'Noto Sans JP',sans-serif",
+                            lineHeight: 1.9,
+                            letterSpacing: 0.5,
+                            maxWidth: 280,
+                        }}>
+                            <div style={{ color: "rgba(255,140,0,0.35)", fontFamily: "Cinzel,serif", fontSize: 9, letterSpacing: 2, marginBottom: 6 }}>HOW TO PLAY</div>
+                            🃏 あなたのユニットがカードになります<br />
+                            🎯 合計値を21に近づけよう<br />
+                            ✋ HIT でカード追加 / STAND で勝負<br />
+                            💥 21を超えるとバースト（負け）<br />
+                            ⚡ 最初の2枚で21 = BLACKJACK！
+                        </div>
                     </div>
                 )}
 
