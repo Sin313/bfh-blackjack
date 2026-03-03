@@ -642,7 +642,7 @@ export default function BFHBlackjack() {
                         </div>
 
                         {/* スコア: WIN列のみ縦並び (数字+連勝)、LOSE・DRAWは横並び */}
-                        <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+                        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
                             {/* WIN + 連勝バナー */}
                             <div style={{ textAlign: "center" }}>
                                 <div style={{
