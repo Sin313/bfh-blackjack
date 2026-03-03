@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
@@ -266,17 +266,49 @@ function Hand({ cards, label, total, animate, hideTotal, totalBelow }: {
     );
 }
 
+// ── SVG Crown Icon ──
+function CrownIcon({ color, rainbow = false, size = 22 }: { color: string; rainbow?: boolean; size?: number }) {
+    return (
+        <svg width={size} height={size * 0.78} viewBox="0 0 40 31" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style={{ verticalAlign: 'middle', flexShrink: 0 }}>
+            <defs>
+                {rainbow && (
+                    <linearGradient id="crown-rb" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#ff6b6b" />
+                        <stop offset="20%" stopColor="#ffa500" />
+                        <stop offset="40%" stopColor="#ffe000" />
+                        <stop offset="60%" stopColor="#44dd88" />
+                        <stop offset="80%" stopColor="#55aaff" />
+                        <stop offset="100%" stopColor="#cc55ff" />
+                    </linearGradient>
+                )}
+            </defs>
+            <path
+                d="M3 27 L3 15 L11 21.5 L20 2 L29 21.5 L37 15 L37 27 Z"
+                fill={rainbow ? 'url(#crown-rb)' : color}
+                stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" strokeLinejoin="round"
+            />
+            <rect x="3" y="24.5" width="34" height="4" rx="2" fill={rainbow ? 'url(#crown-rb)' : color} />
+            <circle cx="3" cy="15" r="2.8" fill="white" opacity="0.85" />
+            <circle cx="20" cy="2" r="2.8" fill="white" opacity="0.85" />
+            <circle cx="37" cy="15" r="2.8" fill="white" opacity="0.85" />
+        </svg>
+    );
+}
+
 // ===================== MAIN GAME =====================
 type GamePhase = "loading" | "error" | "idle" | "playing" | "dealer" | "result";
 type Result = "win" | "lose" | "push" | "blackjack";
 
 const STREAK_BADGES = [
-    { streak: 2, icon: "�", label: "剣士", rarity: "COMMON", color: "rgba(200,200,200,0.95)", glow: "rgba(180,180,180,0.5)" },
-    { streak: 3, icon: "�", label: "戦士", rarity: "UNCOMMON", color: "rgba(100,220,100,0.95)", glow: "rgba(100,220,100,0.5)" },
-    { streak: 5, icon: "👑", label: "勇者", rarity: "RARE", color: "rgba(80,160,255,0.95)", glow: "rgba(80,160,255,0.5)" },
-    { streak: 10, icon: "�", label: "英雄", rarity: "EPIC", color: "rgba(190,100,255,0.95)", glow: "rgba(190,100,255,0.5)" },
-    { streak: 20, icon: "👑", label: "伝説", rarity: "LEGENDARY", color: "rgba(255,215,0,0.95)", glow: "rgba(255,200,0,0.6)" },
+    { streak: 2, rarity: "COMMON", color: "#7ecef4", glow: "rgba(126,206,244,0.6)", rainbow: false },
+    { streak: 3, rarity: "UNCOMMON", color: "#aaee55", glow: "rgba(170,238,85,0.6)", rainbow: false },
+    { streak: 5, rarity: "RARE", color: "#ffd700", glow: "rgba(255,215,0,0.6)", rainbow: false },
+    { streak: 10, rarity: "EPIC", color: "#ff4500", glow: "rgba(255,69,0,0.6)", rainbow: false },
+    { streak: 20, rarity: "LEGENDARY", color: "#ffd700", glow: "rgba(255,215,0,0.6)", rainbow: true },
 ] as const;
+
+
 
 export default function BFHBlackjack() {
     // ── ユニット不足チェック: 1体以上あればプレイ可能 ──
@@ -867,13 +899,19 @@ export default function BFHBlackjack() {
                             </div>
                             {/* 獲得バッジ表示 */}
                             {earnedBadges.length > 0 && (
-                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
                                     {STREAK_BADGES.filter(b => earnedBadges.includes(b.streak)).map(b => (
-                                        <span key={b.streak} title={`${b.rarity} ${b.streak}連勝: ${b.label}`} style={{
-                                            fontSize: 16, cursor: "default",
-                                            filter: `drop-shadow(0 0 5px ${b.glow})`,
-                                            opacity: 0.9,
-                                        }}>{b.icon}</span>
+                                        <span
+                                            key={b.streak}
+                                            title={`${b.rarity} — ${b.streak}連勝達成`}
+                                            style={{
+                                                display: 'inline-flex', cursor: "default",
+                                                filter: b.rainbow ? undefined : `drop-shadow(0 0 4px ${b.glow})`,
+                                                animation: b.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
+                                            }}
+                                        >
+                                            <CrownIcon color={b.color} rainbow={b.rainbow} size={20} />
+                                        </span>
                                     ))}
                                 </div>
                             )}
@@ -915,21 +953,29 @@ export default function BFHBlackjack() {
                 {newBadgeAlert && (
                     <div style={{
                         position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
-                        background: "linear-gradient(135deg,rgba(30,15,0,0.97),rgba(20,10,30,0.97))",
-                        border: "1px solid rgba(255,215,0,0.5)",
-                        borderRadius: 14, padding: "14px 28px",
-                        display: "flex", alignItems: "center", gap: 12,
-                        zIndex: 200, boxShadow: "0 0 40px rgba(255,215,0,0.3)",
+                        background: "linear-gradient(135deg,rgba(20,10,0,0.97),rgba(10,10,25,0.97))",
+                        border: `1px solid ${newBadgeAlert.glow}`,
+                        borderRadius: 14, padding: "14px 24px",
+                        display: "flex", alignItems: "center", gap: 14,
+                        zIndex: 200, boxShadow: `0 0 40px ${newBadgeAlert.glow}`,
                         animation: "bjResultPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
                         whiteSpace: "nowrap",
                     }}>
-                        <span style={{ fontSize: 28 }}>{newBadgeAlert.icon}</span>
+                        <span style={{
+                            display: 'inline-flex',
+                            filter: newBadgeAlert.rainbow ? undefined : `drop-shadow(0 0 8px ${newBadgeAlert.glow})`,
+                            animation: newBadgeAlert.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
+                        }}>
+                            <CrownIcon color={newBadgeAlert.color} rainbow={newBadgeAlert.rainbow} size={40} />
+                        </span>
                         <div>
-                            <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,215,0,0.6)", letterSpacing: 2, marginBottom: 2 }}>称号獲得！</div>
-                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 14, fontWeight: 700, color: newBadgeAlert.color }}>
-                                {newBadgeAlert.streak}連勝 — <span style={{ fontFamily: "Cinzel,serif", fontSize: 11, letterSpacing: 1 }}>{newBadgeAlert.rarity}</span>
+                            <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: 2, marginBottom: 3 }}>CROWN UNLOCKED</div>
+                            <div style={{ fontFamily: "Cinzel,serif", fontSize: 16, fontWeight: 700, color: newBadgeAlert.color, letterSpacing: 2 }}>
+                                {newBadgeAlert.rarity}
                             </div>
-                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{newBadgeAlert.label}</div>
+                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+                                {newBadgeAlert.streak}連勝達成
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1009,9 +1055,15 @@ export default function BFHBlackjack() {
                                 <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,215,0,0.5)", letterSpacing: 2, marginBottom: 10 }}>TITLE SYSTEM</div>
                                 {STREAK_BADGES.map(b => (
                                     <div key={b.streak} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-                                        <span style={{ fontSize: 16, filter: `drop-shadow(0 0 5px ${b.glow})` }}>{b.icon}</span>
+                                        <span style={{
+                                            display: 'inline-flex',
+                                            filter: b.rainbow ? undefined : `drop-shadow(0 0 4px ${b.glow})`,
+                                            animation: b.rainbow ? 'bjRainbow 2s linear infinite' : undefined,
+                                        }}>
+                                            <CrownIcon color={b.color} rainbow={b.rainbow} size={18} />
+                                        </span>
                                         <span style={{ fontFamily: "Cinzel,serif", fontSize: 8, color: b.color, letterSpacing: 1.5, minWidth: 80 }}>{b.rarity}</span>
-                                        <span style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{b.streak}連勝 → {b.label}</span>
+                                        <span style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{b.streak}連勝</span>
                                     </div>
                                 ))}
                             </div>
