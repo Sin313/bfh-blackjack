@@ -559,33 +559,44 @@ export default function BFHBlackjack() {
         /* スマホ用追加スタイル (小画面縦画対応) */
         @media (max-width: 480px) {
           .bj-btn {
-            font-size:13px; padding:14px 24px; letter-spacing:1px;
+            font-size:14px; padding:15px 28px; letter-spacing:1px;
           }
           .bj-btn-deal {
-            font-size:15px; padding:14px 36px; letter-spacing:2px;
+            font-size:16px; padding:16px 40px; letter-spacing:2px;
           }
-          /* ヘッダー: タイトルとスコアを縦並びに */
-          .bj-game-header { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; }
-          /* タイトルを縮小 */
-          .bj-title-wrapper { transform: scale(0.75); transform-origin: left top; }
-          /* カード: 縦画スマホ向けに小さく */
+          /* ヘッダー: タイトルとスコアを縦並び・中心展開 */
+          .bj-game-header {
+            flex-direction: column !important;
+            gap: 10px !important;
+            align-items: center !important;
+          }
+          /* タイトル: 中心から縮小 */
+          .bj-title-wrapper {
+            transform: scale(0.85);
+            transform-origin: center top;
+          }
+          /* カード: 横画スマホで見やすいサイズに */
           .bj-card {
-            width: clamp(52px, 14vw, 72px) !important;
-            height: clamp(78px, 21vw, 108px) !important;
+            width: clamp(62px, 19vw, 90px) !important;
+            height: clamp(93px, 28.5vw, 135px) !important;
           }
-          .bj-card-label-num { font-size: clamp(10px, 2.8vw, 14px) !important; }
-          .bj-card-label-num-10 { font-size: clamp(8px, 2.4vw, 12px) !important; }
-          .bj-card-suit { font-size: clamp(5px, 1.5vw, 8px) !important; }
-          .bj-card-name { font-size: clamp(5px, 1.4vw, 6px) !important; }
-          .bj-card-bb { font-size: clamp(4px, 1.2vw, 5px) !important; }
+          .bj-card-label-num { font-size: clamp(12px, 3.6vw, 18px) !important; }
+          .bj-card-label-num-10 { font-size: clamp(10px, 3vw, 15px) !important; }
+          .bj-card-suit { font-size: clamp(6px, 1.8vw, 9px) !important; }
+          .bj-card-name { font-size: clamp(6px, 1.7vw, 7px) !important; }
+          .bj-card-bb { font-size: clamp(5px, 1.5vw, 6px) !important; }
+          /* メインコンテナ: 上下左右の余白を削減 */
+          .bj-main-container {
+            padding: 12px 8px 24px !important;
+          }
         }
       `}</style>
 
-            <div style={{
-                minHeight: "70vh",
+            <div className="bj-main-container" style={{
+                minHeight: "100svh",
                 background: "radial-gradient(ellipse at 50% 20%, #1a0900 0%, #080810 60%, #030306 100%)",
                 display: "flex", flexDirection: "column", alignItems: "center",
-                justifyContent: "flex-start", padding: "24px 16px 40px",
+                justifyContent: "flex-start", padding: "20px 16px 40px",
                 fontFamily: "'Noto Sans JP',sans-serif", userSelect: "none",
             }}>
 
