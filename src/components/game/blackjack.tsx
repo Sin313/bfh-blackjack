@@ -271,11 +271,11 @@ type GamePhase = "loading" | "error" | "idle" | "playing" | "dealer" | "result";
 type Result = "win" | "lose" | "push" | "blackjack";
 
 const STREAK_BADGES = [
-    { streak: 2, icon: "🗡️", label: "剣士" },
-    { streak: 3, icon: "🛡️", label: "戦士" },
-    { streak: 5, icon: "⚔️", label: "勇者" },
-    { streak: 10, icon: "🔥", label: "英雄" },
-    { streak: 20, icon: "👑", label: "伝説" },
+    { streak: 2, icon: "�", label: "剣士", rarity: "COMMON", color: "rgba(200,200,200,0.95)", glow: "rgba(180,180,180,0.5)" },
+    { streak: 3, icon: "�", label: "戦士", rarity: "UNCOMMON", color: "rgba(100,220,100,0.95)", glow: "rgba(100,220,100,0.5)" },
+    { streak: 5, icon: "👑", label: "勇者", rarity: "RARE", color: "rgba(80,160,255,0.95)", glow: "rgba(80,160,255,0.5)" },
+    { streak: 10, icon: "�", label: "英雄", rarity: "EPIC", color: "rgba(190,100,255,0.95)", glow: "rgba(190,100,255,0.5)" },
+    { streak: 20, icon: "👑", label: "伝説", rarity: "LEGENDARY", color: "rgba(255,215,0,0.95)", glow: "rgba(255,200,0,0.6)" },
 ] as const;
 
 export default function BFHBlackjack() {
@@ -329,13 +329,24 @@ export default function BFHBlackjack() {
             master.connect(ctx.destination);
 
             if (type === 'deal') {
-                const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate);
+                // カード配布音: シャッ（カードスライド）
+                const duration = 0.09;
+                const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
                 const data = buf.getChannelData(0);
                 for (let i = 0; i < data.length; i++) {
-                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+                    const t = i / ctx.sampleRate;
+                    const env = Math.sin(Math.PI * t / duration); // サインカーブ — 中心がぴーク
+                    data[i] = (Math.random() * 2 - 1) * env * 0.9;
                 }
                 const src = ctx.createBufferSource();
-                src.buffer = buf; src.connect(master); src.start();
+                src.buffer = buf;
+                // バンドパスフィルターで紙が滑る音質に
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(4000, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + duration);
+                filter.Q.value = 1.2;
+                src.connect(filter); filter.connect(master); src.start();
             } else if (type === 'win') {
                 [[0, 523], [0.1, 659], [0.2, 784], [0.3, 1047]].forEach(([t, freq]) => {
                     const osc = ctx.createOscillator();
@@ -858,9 +869,10 @@ export default function BFHBlackjack() {
                             {earnedBadges.length > 0 && (
                                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
                                     {STREAK_BADGES.filter(b => earnedBadges.includes(b.streak)).map(b => (
-                                        <span key={b.streak} title={`${b.streak}連勝達成: ${b.label}`} style={{
-                                            fontSize: 14, cursor: "default",
-                                            filter: "drop-shadow(0 0 4px rgba(255,215,0,0.5))",
+                                        <span key={b.streak} title={`${b.rarity} ${b.streak}連勝: ${b.label}`} style={{
+                                            fontSize: 16, cursor: "default",
+                                            filter: `drop-shadow(0 0 5px ${b.glow})`,
+                                            opacity: 0.9,
                                         }}>{b.icon}</span>
                                     ))}
                                 </div>
@@ -914,9 +926,10 @@ export default function BFHBlackjack() {
                         <span style={{ fontSize: 28 }}>{newBadgeAlert.icon}</span>
                         <div>
                             <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,215,0,0.6)", letterSpacing: 2, marginBottom: 2 }}>称号獲得！</div>
-                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 14, fontWeight: 700, color: "#ffd700" }}>
-                                {newBadgeAlert.streak}連勝 — {newBadgeAlert.label}
+                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 14, fontWeight: 700, color: newBadgeAlert.color }}>
+                                {newBadgeAlert.streak}連勝 — <span style={{ fontFamily: "Cinzel,serif", fontSize: 11, letterSpacing: 1 }}>{newBadgeAlert.rarity}</span>
                             </div>
+                            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{newBadgeAlert.label}</div>
                         </div>
                     </div>
                 )}
@@ -991,6 +1004,16 @@ export default function BFHBlackjack() {
                                 💥 21を超えるとバースト（負け）<br />
                                 ⚡ 最初の2枚で21 = <b style={{ color: "#ffd700" }}>BLACKJACK！</b><br />
                                 🎰 ディーラーは17以上で止まる
+                            </div>
+                            <div style={{ marginTop: 16, borderTop: "1px solid rgba(255,215,0,0.15)", paddingTop: 14 }}>
+                                <div style={{ fontFamily: "Cinzel,serif", fontSize: 9, color: "rgba(255,215,0,0.5)", letterSpacing: 2, marginBottom: 10 }}>TITLE SYSTEM</div>
+                                {STREAK_BADGES.map(b => (
+                                    <div key={b.streak} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+                                        <span style={{ fontSize: 16, filter: `drop-shadow(0 0 5px ${b.glow})` }}>{b.icon}</span>
+                                        <span style={{ fontFamily: "Cinzel,serif", fontSize: 8, color: b.color, letterSpacing: 1.5, minWidth: 80 }}>{b.rarity}</span>
+                                        <span style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{b.streak}連勝 → {b.label}</span>
+                                    </div>
+                                ))}
                             </div>
                             <button
                                 onClick={() => setShowRules(false)}
