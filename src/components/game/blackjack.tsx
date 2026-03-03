@@ -556,14 +556,28 @@ export default function BFHBlackjack() {
           margin-top:1px;
           overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
         }
-        /* スマホ用追加スタイル */
+        /* スマホ用追加スタイル (小画面縦画対応) */
         @media (max-width: 480px) {
           .bj-btn {
-            font-size:11px; padding:11px 20px; letter-spacing:1px;
+            font-size:13px; padding:14px 24px; letter-spacing:1px;
           }
           .bj-btn-deal {
-            font-size:13px; padding:12px 32px; letter-spacing:2px;
+            font-size:15px; padding:14px 36px; letter-spacing:2px;
           }
+          /* ヘッダー: タイトルとスコアを縦並びに */
+          .bj-game-header { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; }
+          /* タイトルを縮小 */
+          .bj-title-wrapper { transform: scale(0.75); transform-origin: left top; }
+          /* カード: 縦画スマホ向けに小さく */
+          .bj-card {
+            width: clamp(52px, 14vw, 72px) !important;
+            height: clamp(78px, 21vw, 108px) !important;
+          }
+          .bj-card-label-num { font-size: clamp(10px, 2.8vw, 14px) !important; }
+          .bj-card-label-num-10 { font-size: clamp(8px, 2.4vw, 12px) !important; }
+          .bj-card-suit { font-size: clamp(5px, 1.5vw, 8px) !important; }
+          .bj-card-name { font-size: clamp(5px, 1.4vw, 6px) !important; }
+          .bj-card-bb { font-size: clamp(4px, 1.2vw, 5px) !important; }
         }
       `}</style>
 
@@ -578,9 +592,9 @@ export default function BFHBlackjack() {
                 {/* ── HEADER ── */}
                 <div style={{ width: "100%", maxWidth: 560, marginBottom: 24 }}>
                     {/* デザインタイトル */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div className="bj-game-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         {/* ── タイトル ── */}
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 0, position: "relative" }}>
+                        <div className="bj-title-wrapper" style={{ display: "flex", alignItems: "baseline", gap: 0, position: "relative" }}>
                             {/* デコレーティブ横線（上） */}
                             <div style={{
                                 position: "absolute", top: -6, left: 0, right: 0, height: 1,
