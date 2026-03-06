@@ -444,7 +444,7 @@ export default function BFHBlackjack() {
                 const tokenIds = data.units ?? [];
 
                 if (tokenIds.length < 4) throw new Error(`ユニットが少なすぎます（${tokenIds.length}体）。最低4体必要です。`);
-
+                // 26体に制限（デッキ構成に合わせる）
                 const sample = shuffle(tokenIds).slice(0, 26);
                 setLoadTotal(sample.length);
 
