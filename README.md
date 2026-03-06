@@ -2,7 +2,7 @@
 
 Brave Frontier Heroes の外部APIを活用したダッシュボード＆ブラックジャックゲーム。
 
-🌐 **Production**: https://bfh-forge-dashboard.vercel.app
+🌐 **Production**: https://shins-bfh-blackjack.vercel.app
 
 ## Features
 
