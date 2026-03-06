@@ -19,8 +19,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BFH Forge Dashboard",
-  description: "Brave Frontier Heroes External API Dashboard",
+  title: "BFH Blackjack",
+  description: "Brave Frontier Heroes Blackjack Game",
 };
 
 export default function RootLayout({

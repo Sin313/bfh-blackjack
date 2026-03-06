@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * スマホ認証ルート: PC のトークンをスマホに共有するためのエンドポイント
- * /mobile?t=<access_token> でアクセスすると Cookie をセットして /dashboard へリダイレクト
+ * /mobile?t=<access_token> でアクセスすると Cookie をセットして /game へリダイレクト
  */
 export async function GET(request: NextRequest) {
     const token = request.nextUrl.searchParams.get('t');
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
     }
 
-    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+    const response = NextResponse.redirect(new URL('/game', request.url));
 
     response.cookies.set('bfh_access_token', token, {
         httpOnly: false,

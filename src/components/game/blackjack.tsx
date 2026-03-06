@@ -445,7 +445,7 @@ export default function BFHBlackjack() {
 
                 if (tokenIds.length < 4) throw new Error(`ユニットが少なすぎます（${tokenIds.length}体）。最低4体必要です。`);
 
-                const sample = shuffle(tokenIds).slice(0, 60);
+                const sample = shuffle(tokenIds).slice(0, 26);
                 setLoadTotal(sample.length);
 
                 const results = await Promise.all(
@@ -839,7 +839,7 @@ export default function BFHBlackjack() {
                                 {/* スコアリセット */}
                                 <button
                                     onClick={() => {
-                                        if (window.confirm("スコア（W/L/D および連勝）をリセットしてもよろしいですか？")) {
+                                        if (window.confirm("スコア（W/L/D）をリセットしてもよろしいですか？")) {
                                             const cleared = { win: 0, lose: 0, push: 0 };
                                             setScore(cleared); setWinStreak(0);
                                             localStorage.setItem('bfh_score', JSON.stringify(cleared));

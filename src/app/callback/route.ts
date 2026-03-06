@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
         const { access_token, refresh_token, expires_in } = response.data;
 
-        const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
+        const redirectResponse = NextResponse.redirect(new URL('/game', request.url));
 
         redirectResponse.cookies.set('bfh_access_token', access_token, {
             httpOnly: false,
